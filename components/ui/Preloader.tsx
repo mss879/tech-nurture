@@ -322,7 +322,7 @@ export default function Preloader() {
       {/* Status Bar */}
       <div className="absolute bottom-16 left-8 right-8 max-w-lg mx-auto flex flex-col gap-3 w-[calc(100%-4rem)] pointer-events-none z-10">
         <div className="flex justify-between items-end text-xs font-mono tracking-wider opacity-60">
-          <span>WebGL HARMONIC FLOW</span>
+          <span>LOADING</span>
           <span ref={counterRef}>{progress}%</span>
         </div>
         {/* Progress Line Track */}
