@@ -75,17 +75,17 @@ Details: ${form.message || "—"}`;
   };
 
   const field =
-    "w-full rounded-xl border border-white/15 bg-white/[0.04] px-4 py-3.5 text-mist placeholder:text-mist/35 outline-none transition focus:border-lime focus:bg-white/[0.07]";
-  const label = "mb-2 block text-sm font-medium text-mist/70";
+    "w-full rounded-xl border border-black/10 bg-white px-4 py-3.5 text-ink placeholder:text-slate/40 outline-none transition focus:border-green focus:ring-1 focus:ring-green/20";
+  const label = "mb-2 block text-sm font-medium text-slate/75";
 
   if (status === "success") {
     return (
-      <div className="rounded-2xl border border-lime/30 bg-lime/5 p-8 text-center">
-        <CheckCircle2 className="mx-auto size-10 text-lime" />
-        <h3 className="mt-4 text-xl font-semibold text-mist">
+      <div className="rounded-2xl border border-green/30 bg-green/5 p-8 text-center">
+        <CheckCircle2 className="mx-auto size-10 text-green" />
+        <h3 className="mt-4 text-xl font-semibold text-ink">
           Enquiry received!
         </h3>
-        <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-mist/60">
+        <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-slate/60">
           Thank you, {form.name.split(" ")[0]}. Our team has your enquiry and
           will contact you as soon as possible.
         </p>
@@ -101,7 +101,7 @@ Details: ${form.message || "—"}`;
             });
             setStatus("idle");
           }}
-          className="mt-6 text-sm font-medium text-lime underline-offset-4 hover:underline"
+          className="mt-6 text-sm font-medium text-green underline underline-offset-4 hover:text-green-600"
         >
           Send another enquiry
         </button>
@@ -142,7 +142,7 @@ Details: ${form.message || "—"}`;
 
       <div>
         <label className={label} htmlFor="email">
-          Email <span className="text-mist/40">(optional)</span>
+          Email <span className="text-slate/40">(optional)</span>
         </label>
         <input
           id="email"
@@ -163,10 +163,10 @@ Details: ${form.message || "—"}`;
             id="service"
             value={form.service}
             onChange={(e) => update("service", e.target.value)}
-            className={`${field} appearance-none`}
+            className={`${field} appearance-none bg-white`}
           >
             {serviceOptions.map((s) => (
-              <option key={s} className="bg-ink">
+              <option key={s} className="bg-white text-ink">
                 {s}
               </option>
             ))}
@@ -180,10 +180,10 @@ Details: ${form.message || "—"}`;
             id="province"
             value={form.province}
             onChange={(e) => update("province", e.target.value)}
-            className={`${field} appearance-none`}
+            className={`${field} appearance-none bg-white`}
           >
             {provinces.map((p) => (
-              <option key={p} className="bg-ink">
+              <option key={p} className="bg-white text-ink">
                 {p}
               </option>
             ))}
@@ -206,13 +206,13 @@ Details: ${form.message || "—"}`;
       </div>
 
       {status === "error" && (
-        <div className="rounded-xl border border-red-400/30 bg-red-400/10 px-4 py-3 text-sm text-red-200">
+        <div className="rounded-xl border border-red-400/30 bg-red-400/10 px-4 py-3 text-sm text-red-800">
           <p>{errorMsg}</p>
           <a
             href={whatsappLink(whatsappMsg)}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-1 inline-block font-semibold text-lime underline underline-offset-2"
+            className="mt-1 inline-block font-semibold text-green underline underline-offset-2 hover:text-green-600"
           >
             Or send it via WhatsApp instead →
           </a>
@@ -234,14 +234,14 @@ Details: ${form.message || "—"}`;
           </>
         )}
       </button>
-      <p className="text-xs text-mist/40">
+      <p className="text-xs text-slate/50">
         Your enquiry goes straight to our team and we&apos;ll get back to you as
         soon as possible. Prefer WhatsApp?{" "}
         <a
           href={whatsappLink(whatsappMsg)}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-lime underline-offset-2 hover:underline"
+          className="text-green font-semibold underline underline-offset-2 hover:text-green-600"
         >
           Message us directly
         </a>

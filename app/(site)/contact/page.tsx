@@ -43,7 +43,7 @@ export default function ContactPage() {
         page="Contact"
       />
 
-      <section className="bg-ink py-20 text-mist sm:py-24">
+      <section className="bg-mist-200 py-20 text-slate sm:py-24">
         <div className="mx-auto max-w-7xl px-6">
           {/* quick contact cards */}
           <div className="grid gap-4 sm:grid-cols-3">
@@ -53,14 +53,14 @@ export default function ContactPage() {
                   href={c.href}
                   target={c.href.startsWith("http") ? "_blank" : undefined}
                   rel="noopener noreferrer"
-                  className="flex items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.03] p-6 transition hover:border-lime/40 hover:bg-white/[0.06]"
+                  className="flex items-center gap-4 rounded-2xl border border-black/[0.06] bg-white p-6 transition hover:border-green/30 hover:shadow-[0_10px_35px_rgba(5,47,67,0.06)]"
                 >
                   <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-lime text-ink">
                     <c.icon className="size-5" />
                   </span>
                   <div>
-                    <p className="eyebrow text-mist/45">{c.label}</p>
-                    <p className="mt-1 font-medium">{c.value}</p>
+                    <p className="eyebrow text-slate/50">{c.label}</p>
+                    <p className="mt-1 font-semibold text-ink">{c.value}</p>
                   </div>
                 </a>
               </Reveal>
@@ -70,11 +70,11 @@ export default function ContactPage() {
           <div className="mt-12 grid gap-12 lg:grid-cols-[1.1fr_0.9fr]">
             {/* form */}
             <Reveal>
-              <div className="rounded-[2rem] border border-white/10 bg-white/[0.02] p-7 sm:p-10">
-                <h2 className="display text-3xl sm:text-4xl">
+              <div className="rounded-[2rem] border border-black/[0.06] bg-white p-7 sm:p-10 shadow-[0_20px_50px_rgba(5,47,67,0.04)] text-ink">
+                <h2 className="display text-3xl sm:text-4xl text-ink">
                   Request a quotation
                 </h2>
-                <p className="mt-3 text-mist/60">
+                <p className="mt-3 text-slate/60">
                   Tell us what you need and we&apos;ll get back to you with a
                   tailored solution.
                 </p>
@@ -87,7 +87,7 @@ export default function ContactPage() {
             {/* info */}
             <div className="space-y-6">
               <Reveal as="div">
-                <div className="rounded-[1.75rem] bg-gradient-to-br from-green to-teal p-8 text-white">
+                <div className="rounded-[1.75rem] bg-gradient-to-br from-green to-teal p-8 text-white shadow-[0_20px_50px_rgba(5,47,67,0.15)]">
                   <MapPin className="size-7" />
                   <h3 className="mt-5 text-xl font-semibold">Visit us</h3>
                   <p className="mt-2 text-white/85">{site.address}</p>
@@ -100,9 +100,9 @@ export default function ContactPage() {
                 </div>
               </Reveal>
               <Reveal as="div" delay={0.08}>
-                <div className="rounded-[1.75rem] border border-white/10 bg-white/[0.03] p-8">
+                <div className="rounded-[1.75rem] border border-black/[0.06] bg-white p-8 shadow-[0_20px_50px_rgba(5,47,67,0.04)] text-ink">
                   <h3 className="text-xl font-semibold">Island-wide service</h3>
-                  <p className="mt-2 text-mist/60">
+                  <p className="mt-2 text-slate/60">
                     We provide installation, maintenance and technical support
                     across all nine provinces of Sri Lanka.
                   </p>

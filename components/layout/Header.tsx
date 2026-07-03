@@ -104,10 +104,10 @@ export default function Header({ embedded = false }: { embedded?: boolean }) {
     <div className="flex items-center gap-3">
       <Magnetic strength={0.2} className="hidden sm:inline-block">
         <Link
-          href="/shop"
+          href="/contact"
           className="btn-lime inline-flex items-center px-5 py-2.5 text-[0.78rem] uppercase tracking-wider"
         >
-          Shop Now
+          Book Inspection
         </Link>
       </Magnetic>
 
@@ -159,10 +159,10 @@ export default function Header({ embedded = false }: { embedded?: boolean }) {
           );
         })}
         <Link
-          href="/shop"
+          href="/contact"
           className="btn-lime mt-3 grid place-items-center px-5 py-3 text-sm uppercase tracking-wider"
         >
-          Shop Now
+          Book Inspection
         </Link>
         <a
           href={site.phoneHref}
