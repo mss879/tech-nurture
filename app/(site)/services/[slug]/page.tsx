@@ -96,13 +96,14 @@ export default async function ServicePage({
             </div>
           </div>
           <Reveal as="div" delay={0.1}>
-            <div className="relative overflow-hidden rounded-[2rem] bg-white">
+            <div className="relative overflow-hidden rounded-[2rem] border border-black/[0.06] shadow-[0_20px_50px_-20px_rgba(5,47,67,0.15)] bg-mist-200">
               <Image
                 src={service.image}
                 alt={service.title}
                 width={900}
-                height={900}
-                className="h-[360px] w-full object-contain p-10 sm:h-[460px]"
+                height={600}
+                className="h-[360px] w-full object-cover sm:h-[460px] transition-transform duration-700 hover:scale-105"
+                priority
               />
             </div>
           </Reveal>
