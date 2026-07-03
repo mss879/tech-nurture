@@ -1,23 +1,17 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import * as THREE from "three";
 import gsap from "gsap";
-
-const targetWord = "WELCOME";
-const glyphs = "X&?*+!Ø#@%{}<>[]/\\|+=~_";
 
 export default function Preloader() {
   const [progress, setProgress] = useState(0);
-  const [displayChars, setDisplayChars] = useState<string[]>(() =>
-    targetWord.split("").map(() => glyphs[Math.floor(Math.random() * glyphs.length)])
-  );
-
+  
   const containerRef = useRef<HTMLDivElement>(null);
+  const canvasContainerRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLHeadingElement>(null);
   const counterRef = useRef<HTMLDivElement>(null);
   const progressLineRef = useRef<HTMLDivElement>(null);
-  const displacementRef = useRef<SVGFEDisplacementMapElement>(null);
-  const turbulenceRef = useRef<SVGFETurbulenceElement>(null);
 
   useEffect(() => {
     // Disable scrolling during load
@@ -29,139 +23,262 @@ export default function Preloader() {
     videoReq.responseType = "blob";
     videoReq.send();
 
-    // Background orbs slow drift
-    gsap.to(".bg-orb-1", {
-      x: "25vw",
-      y: "15vh",
-      duration: 10,
-      repeat: -1,
-      yoyo: true,
-      ease: "sine.inOut",
-    });
-    gsap.to(".bg-orb-2", {
-      x: "-25vw",
-      y: "-15vh",
-      duration: 12,
-      repeat: -1,
-      yoyo: true,
-      ease: "sine.inOut",
-    });
-    gsap.to(".bg-orb-3", {
-      x: "15vw",
-      y: "-10vh",
-      duration: 14,
-      repeat: -1,
-      yoyo: true,
-      ease: "sine.inOut",
-    });
-
-    // Animate turbulence frequency in background
+    // Setup Three.js WebGL Particle Morph
+    let renderer: THREE.WebGLRenderer;
+    let scene: THREE.Scene;
+    let camera: THREE.PerspectiveCamera;
+    let points: THREE.Points;
+    let material: THREE.ShaderMaterial;
     let animationFrameId: number;
-    let uTime = 0;
-    const tick = () => {
-      uTime += 0.015;
-      if (turbulenceRef.current) {
-        const baseFreqX = 0.03 + Math.sin(uTime) * 0.006;
-        const baseFreqY = 0.06 + Math.cos(uTime * 0.8) * 0.006;
-        turbulenceRef.current.setAttribute("baseFrequency", `${baseFreqX} ${baseFreqY}`);
+
+    const count = 8000; // Increased particle count for premium density and detail
+
+    if (canvasContainerRef.current) {
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+
+      // Renderer
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.setSize(width, height);
+      canvasContainerRef.current.appendChild(renderer.domElement);
+
+      // Scene & Camera
+      scene = new THREE.Scene();
+      camera = new THREE.PerspectiveCamera(60, width / height, 0.1, 100);
+      camera.position.z = 3.5;
+
+      // Geometries
+      const geometry = new THREE.BufferGeometry();
+
+      // State 0: Sphere
+      const positions = new Float32Array(count * 3);
+      for (let i = 0; i < count; i++) {
+        const u = Math.random();
+        const v = Math.random();
+        const theta = u * 2.0 * Math.PI;
+        const phi = Math.acos(2.0 * v - 1.0);
+        const r = 1.1 + Math.random() * 0.3;
+        positions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+        positions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+        positions[i * 3 + 2] = r * Math.cos(phi);
       }
-      animationFrameId = requestAnimationFrame(tick);
-    };
-    tick();
 
-    // Core progress timeline
-    const progressObj = { value: 0 };
-    const loadingTimeline = gsap.timeline({
-      onComplete: () => {
-        // Exit Sequence
-        const exitTl = gsap.timeline({
-          onComplete: () => {
-            // Re-enable scroll
-            document.body.style.overflow = "";
-            (window as any).__preloaderComplete = true;
-            window.dispatchEvent(new Event("preloaderComplete"));
-          },
-        });
+      // State 1: Flowing Sine Wave Helix
+      const wavePositions = new Float32Array(count * 3);
+      for (let i = 0; i < count; i++) {
+        const t = (i / count) * 4.0 - 2.0; // x coordinate from -2.0 to 2.0
+        const angle = (i / count) * Math.PI * 12.0; // Helix spirals
+        const r = 0.28;
+        wavePositions[i * 3] = t;
+        wavePositions[i * 3 + 1] = Math.sin(t * 3.0) * 0.45 + Math.sin(angle) * r;
+        wavePositions[i * 3 + 2] = Math.cos(angle) * r;
+      }
 
-        exitTl
-          .to([textRef.current, counterRef.current, progressLineRef.current], {
-            opacity: 0,
-            y: -25,
-            duration: 0.6,
-            stagger: 0.08,
-            ease: "power3.inOut",
-          })
-          // Melt the text outward as it fades
-          .to(
-            displacementRef.current,
-            {
-              attr: { scale: 140 },
-              duration: 0.6,
-              ease: "power2.in",
-            },
-            0
-          )
-          .to(
-            containerRef.current,
-            {
-              yPercent: -100,
-              duration: 1.0,
-              ease: "power4.inOut",
-            },
-            "-=0.3"
-          );
-      },
-    });
+      // State 2: Explosion Dispersal (explodes from wave coordinates)
+      const explodePositions = new Float32Array(count * 3);
+      for (let i = 0; i < count; i++) {
+        const x = wavePositions[i * 3];
+        const y = wavePositions[i * 3 + 1];
+        const z = wavePositions[i * 3 + 2];
+        const len = Math.sqrt(x * x + y * y + z * z) || 1.0;
+        const dirX = x / len;
+        const dirY = y / len;
+        const dirZ = z / len;
+        const speed = 4.5 + Math.random() * 4.5;
+        explodePositions[i * 3] = x + dirX * speed;
+        explodePositions[i * 3 + 1] = y + dirY * speed;
+        explodePositions[i * 3 + 2] = z + dirZ * speed;
+      }
 
-    // Morph the SVG displacement scale from 120 (highly distorted) to 0 (crisp text)
-    loadingTimeline.to(
-      displacementRef.current,
-      {
-        attr: { scale: 0 },
-        duration: 3.8,
-        ease: "power2.inOut",
-      },
-      0
-    );
+      // Assign Buffer Attributes
+      geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+      geometry.setAttribute("aWavePosition", new THREE.BufferAttribute(wavePositions, 3));
+      geometry.setAttribute("aExplodePosition", new THREE.BufferAttribute(explodePositions, 3));
 
-    // Count progress from 0% to 100%
-    loadingTimeline.to(
-      progressObj,
-      {
-        value: 100,
-        duration: 4.0,
-        ease: "power2.out",
-        onUpdate: () => {
-          const currentProgress = Math.round(progressObj.value);
-          setProgress(currentProgress);
-
-          // Calculate scramble characters
-          const ratio = currentProgress / 100;
-          const nextChars = targetWord.split("").map((char, index) => {
-            const threshold = index / targetWord.length;
-            // Fully lock in letters once past their progress threshold
-            if (ratio >= threshold + 0.1) {
-              return char;
-            }
-            // Give a flicker chance when close to threshold
-            if (ratio > threshold - 0.1 && Math.random() > 0.45) {
-              return char;
-            }
-            // Scramble glyph
-            return glyphs[Math.floor(Math.random() * glyphs.length)];
-          });
-          setDisplayChars(nextChars);
+      // Shaders Material
+      material = new THREE.ShaderMaterial({
+        transparent: true,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+        uniforms: {
+          uProgress: { value: 0.0 },
+          uTime: { value: 0.0 },
+          uColor1: { value: new THREE.Color("#8fd13f") }, // Lime
+          uColor2: { value: new THREE.Color("#0b5b66") }, // Teal
         },
-      },
-      0
-    );
+        vertexShader: `
+          uniform float uProgress;
+          uniform float uTime;
+          attribute vec3 aWavePosition;
+          attribute vec3 aExplodePosition;
+          varying vec3 vPosition;
 
-    return () => {
-      cancelAnimationFrame(animationFrameId);
-    };
+          void main() {
+            vec3 pos = position;
+
+            // Use smoothstep for fluid transition morph easing
+            float t = clamp(uProgress, 0.0, 2.0);
+            if (t < 1.0) {
+              float ease = smoothstep(0.0, 1.0, t);
+              pos = mix(position, aWavePosition, ease);
+            } else {
+              float ease = smoothstep(0.0, 1.0, t - 1.0);
+              pos = mix(aWavePosition, aExplodePosition, ease);
+            }
+
+            // High-fluidity organic 3D wave warp (sinusoidal fluid distortion)
+            float speed = 1.6;
+            float strength = 0.08;
+            
+            float distortX = sin(pos.y * 3.5 + uTime * speed) * strength + cos(pos.z * 4.5 + uTime * speed * 0.8) * (strength * 0.5);
+            float distortY = cos(pos.x * 3.5 + uTime * speed) * strength + sin(pos.z * 4.5 + uTime * speed * 0.8) * (strength * 0.5);
+            float distortZ = sin(pos.x * 4.0 + uTime * speed * 0.9) * strength + cos(pos.y * 4.0 + uTime * speed * 0.9) * (strength * 0.5);
+            
+            pos.x += distortX;
+            pos.y += distortY;
+            pos.z += distortZ;
+
+            vPosition = pos;
+            vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
+            gl_Position = projectionMatrix * mvPosition;
+
+            // Camera distance size attenuation with dynamic pulse wave
+            gl_PointSize = (24.0 / -mvPosition.z) * (1.2 + sin(uTime * 2.5 + pos.x * 2.0) * 0.3);
+          }
+        `,
+        fragmentShader: `
+          varying vec3 vPosition;
+          uniform THREE_COLOR uColor1;
+          uniform THREE_COLOR uColor2;
+
+          void main() {
+            float dist = distance(gl_PointCoord, vec2(0.5));
+            if (dist > 0.5) discard;
+
+            // Fluid soft circle particle falloff
+            float alpha = smoothstep(0.5, 0.12, dist);
+
+            // Interpolate colors based on Y position and depth Z for a rich volumetric look
+            float mixFactor = clamp((vPosition.y + 0.5) * 0.7 + (vPosition.z + 0.2) * 0.3, 0.0, 1.0);
+            vec3 color = mix(uColor1, uColor2, mixFactor);
+
+            gl_FragColor = vec4(color, alpha * 0.85);
+          }
+        `
+          // Note: Next.js and Tailwind compilation resolves THREE_COLOR to vec3 in compilation
+          .replace(/THREE_COLOR/g, "vec3"),
+      });
+
+      points = new THREE.Points(geometry, material);
+      scene.add(points);
+
+      // WebGL Resize handler
+      const handleResize = () => {
+        if (!renderer || !camera) return;
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+        camera.aspect = w / h;
+        camera.updateProjectionMatrix();
+        renderer.setSize(w, h);
+      };
+      window.addEventListener("resize", handleResize);
+
+      // Render Loop
+      const clock = new THREE.Clock();
+      const tick = () => {
+        const elapsedTime = clock.getElapsedTime();
+        if (material) material.uniforms.uTime.value = elapsedTime;
+        if (points) {
+          points.rotation.y = elapsedTime * 0.12;
+          points.rotation.x = elapsedTime * 0.04;
+        }
+        if (renderer && scene && camera) {
+          renderer.render(scene, camera);
+        }
+        animationFrameId = requestAnimationFrame(tick);
+      };
+      tick();
+
+      // Progress bar and state loader animation (exact 4-second sequence)
+      const progressObj = { value: 0 };
+      const loadingTimeline = gsap.timeline({
+        onComplete: () => {
+          // Trigger exit sequence
+          const exitTl = gsap.timeline({
+            onComplete: () => {
+              // Enable scroll
+              document.body.style.overflow = "";
+              // Set global loading complete flag
+              (window as any).__preloaderComplete = true;
+              window.dispatchEvent(new Event("preloaderComplete"));
+            },
+          });
+
+          exitTl
+            .to([textRef.current, counterRef.current, progressLineRef.current], {
+              opacity: 0,
+              y: -15,
+              duration: 0.5,
+              stagger: 0.08,
+              ease: "power3.inOut",
+            })
+            .to(
+              containerRef.current,
+              {
+                yPercent: -100,
+                duration: 1.0,
+                ease: "power4.inOut",
+              },
+              "-=0.2"
+            );
+        },
+      });
+
+      // Morph progress uniform from 0.0 to 2.0 (Sphere -> Wave -> Explode)
+      loadingTimeline.to(
+        material.uniforms.uProgress,
+        {
+          value: 2.0,
+          duration: 4.0,
+          ease: "power2.inOut",
+        },
+        0
+      );
+
+      // Counter progress from 0% to 100%
+      loadingTimeline.to(
+        progressObj,
+        {
+          value: 100,
+          duration: 4.0,
+          ease: "power1.inOut",
+          onUpdate: () => {
+            setProgress(Math.round(progressObj.value));
+          },
+        },
+        0
+      );
+
+      // Cleanup
+      return () => {
+        window.removeEventListener("resize", handleResize);
+        cancelAnimationFrame(animationFrameId);
+
+        // Geometries
+        geometry.dispose();
+        // Materials
+        material.dispose();
+        // Renderer
+        renderer.dispose();
+        if (renderer.domElement && renderer.domElement.parentNode) {
+          renderer.domElement.parentNode.removeChild(renderer.domElement);
+        }
+      };
+    }
   }, []);
 
-  // Sync visual bar width
+  // Update visual bar width
   useEffect(() => {
     if (progressLineRef.current) {
       gsap.to(progressLineRef.current, {
@@ -178,69 +295,34 @@ export default function Preloader() {
       className="noise fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-black text-mist select-none overflow-hidden"
       style={{ willChange: "transform" }}
     >
-      {/* Background ambient orbs */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none -z-10">
-        <div className="bg-orb-1 absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] rounded-full bg-teal/20 blur-[100px] mix-blend-screen" />
-        <div className="bg-orb-2 absolute bottom-[-10%] right-[-10%] w-[50vw] h-[50vw] rounded-full bg-lime/10 blur-[100px] mix-blend-screen" />
-        <div className="bg-orb-3 absolute top-[30%] left-[35%] w-[30vw] h-[30vw] rounded-full bg-green/10 blur-[80px] mix-blend-screen" />
-      </div>
+      {/* Three.js canvas container */}
+      <div
+        ref={canvasContainerRef}
+        className="absolute inset-0 w-full h-full -z-10 bg-black"
+      />
 
-      {/* SVG Liquid Warp Filter */}
-      <svg className="absolute w-0 h-0 pointer-events-none" aria-hidden="true" focusable="false">
-        <defs>
-          <filter id="liquid-warp">
-            <feTurbulence
-              ref={turbulenceRef}
-              type="fractalNoise"
-              baseFrequency="0.03 0.06"
-              numOctaves="2"
-              result="noise"
-            />
-            <feDisplacementMap
-              ref={displacementRef}
-              in="SourceGraphic"
-              in2="noise"
-              scale="120"
-              xChannelSelector="R"
-              yChannelSelector="G"
-            />
-          </filter>
-        </defs>
-      </svg>
+      {/* Radial overlay to dim corners */}
+      <div className="absolute inset-0 bg-radial-vignette pointer-events-none -z-5" 
+           style={{ background: "radial-gradient(circle, transparent 20%, rgba(0,0,0,0.85) 100%)" }}
+      />
 
-      {/* Center text wrapper */}
-      <div className="flex flex-col items-center justify-center pointer-events-none z-10 select-none">
-        <span className="eyebrow text-lime/60 mb-6 tracking-[0.3em] text-[10px] sm:text-xs">
-          INITIALIZING CONNECTION
+      {/* Welcome Display Text */}
+      <div className="h-28 flex flex-col items-center justify-center pointer-events-none select-none z-10">
+        <span className="eyebrow text-lime/50 mb-3 tracking-[0.25em] text-[10px] sm:text-xs">
+          TECH NATURE
         </span>
-
-        <h1
+        <h2
           ref={textRef}
-          className="text-6xl sm:text-8xl md:text-9xl font-black tracking-[0.18em] select-none text-center flex items-center justify-center font-display"
-          style={{ filter: "url(#liquid-warp)" }}
+          className="text-5xl sm:text-6xl lg:text-7xl font-black tracking-[0.15em] text-center bg-gradient-to-r from-lime via-mist-200 to-teal bg-clip-text text-transparent drop-shadow-[0_0_30px_rgba(143,209,63,0.15)] font-display uppercase"
         >
-          {displayChars.map((char, index) => {
-            const isGlyph = char !== targetWord[index];
-            return (
-              <span
-                key={index}
-                className={`inline-block transition-all duration-75 mx-[0.02em] ${
-                  isGlyph
-                    ? "text-lime/30 font-mono scale-95 opacity-40"
-                    : "bg-gradient-to-r from-lime via-green to-teal bg-clip-text text-transparent drop-shadow-[0_0_30px_rgba(143,209,63,0.35)]"
-                }`}
-              >
-                {char}
-              </span>
-            );
-          })}
-        </h1>
+          Welcome
+        </h2>
       </div>
 
       {/* Status Bar */}
       <div className="absolute bottom-16 left-8 right-8 max-w-lg mx-auto flex flex-col gap-3 w-[calc(100%-4rem)] pointer-events-none z-10">
         <div className="flex justify-between items-end text-xs font-mono tracking-wider opacity-60">
-          <span>GENERATIVE ALIGNMENT</span>
+          <span>WebGL HARMONIC FLOW</span>
           <span ref={counterRef}>{progress}%</span>
         </div>
         {/* Progress Line Track */}
