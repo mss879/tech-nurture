@@ -176,7 +176,7 @@ export const serviceCatalog = [
       "water filter replacement Sri Lanka",
       "water purification services",
     ],
-    image: "/products/dispenser-counter-front.jpeg",
+    image: "/services/water-purification.png",
     intro: {
       heading: "Clean water you can rely on, day after day.",
       body: [
@@ -234,7 +234,7 @@ export const serviceCatalog = [
       "AC gas charging",
       "commercial air conditioning service",
     ],
-    image: "/products/dispenser-counter-angle.jpeg",
+    image: "/services/air-conditioning.png",
     intro: {
       heading: "Cooling that stays efficient — and stays working.",
       body: [
@@ -292,7 +292,7 @@ export const serviceCatalog = [
       "preventive maintenance services",
       "equipment maintenance contract",
     ],
-    image: "/products/dispenser-floor-front.jpeg",
+    image: "/services/maintenance-amc.png",
     intro: {
       heading: "The cheapest repair is the one you never need.",
       body: [
