@@ -19,7 +19,7 @@ export default function Preloader() {
 
     // Preload video in the background
     const videoReq = new XMLHttpRequest();
-    videoReq.open("GET", "/hero-vid.mp4", true);
+    videoReq.open("GET", "/3D_particle_field_animation_wave…_202607020045.mp4", true);
     videoReq.responseType = "blob";
     videoReq.send();
 

@@ -18,7 +18,11 @@ export default function Hero() {
       setIsLoaded(true);
       return;
     }
-    const handleComplete = () => setIsLoaded(true);
+
+    const handleComplete = () => {
+      setIsLoaded(true);
+    };
+
     window.addEventListener("preloaderComplete", handleComplete);
     return () => window.removeEventListener("preloaderComplete", handleComplete);
   }, []);
@@ -27,26 +31,46 @@ export default function Hero() {
     () => {
       if (!isLoaded) return;
 
-      gsap
-        .timeline({ defaults: { ease: "power4.out" }, delay: 0.1 })
-        .from("[data-hero-eyebrow]", { y: 18, autoAlpha: 0, duration: 0.7 })
-        .from(
-          "[data-hero-line] span",
-          { yPercent: 115, duration: 1.05, stagger: 0.1 },
-          "-=0.35"
-        )
-        .from("[data-hero-sub]", { y: 16, autoAlpha: 0, duration: 0.7 }, "-=0.7")
-        .from(
-          "[data-hero-cta]",
-          { y: 16, autoAlpha: 0, duration: 0.6, stagger: 0.1 },
-          "-=0.45"
-        )
-        .fromTo(
-          "[data-hero-video]",
-          { autoAlpha: 0, scale: 1.06 },
-          { autoAlpha: 1, scale: 1, duration: 1.5, ease: "power2.out" },
-          "-=1.2"
-        );
+      const tl = gsap.timeline({ defaults: { ease: "power4.out" }, delay: 0.15 });
+
+      // Slide header down from top
+      tl.fromTo(
+        "[data-hero-header]",
+        { y: -60, autoAlpha: 0 },
+        { y: 0, autoAlpha: 1, duration: 1.0 }
+      );
+
+      // Slide eyebrow from left
+      tl.fromTo(
+        "[data-hero-eyebrow]",
+        { x: -50, autoAlpha: 0 },
+        { x: 0, autoAlpha: 1, duration: 0.8 },
+        "-=0.75"
+      );
+
+      // Slide title lines from left
+      tl.fromTo(
+        "[data-hero-line] span",
+        { x: -80, autoAlpha: 0 },
+        { x: 0, autoAlpha: 1, duration: 1.0, stagger: 0.1 },
+        "-=0.6"
+      );
+
+      // Slide subtitle from left
+      tl.fromTo(
+        "[data-hero-sub]",
+        { x: -40, autoAlpha: 0 },
+        { x: 0, autoAlpha: 1, duration: 0.8 },
+        "-=0.6"
+      );
+
+      // Slide CTAs from left
+      tl.fromTo(
+        "[data-hero-cta]",
+        { x: -30, autoAlpha: 0 },
+        { x: 0, autoAlpha: 1, duration: 0.7, stagger: 0.1 },
+        "-=0.55"
+      );
     },
     { dependencies: [isLoaded], scope: root }
   );
@@ -57,7 +81,6 @@ export default function Hero() {
       <div className="relative flex min-h-[calc(100svh-6px)] flex-col overflow-hidden rounded-[2rem] border border-black/[0.06] bg-gradient-to-br from-mist via-white to-mist-200 px-[5%] py-5 shadow-[0_30px_80px_-40px_rgba(5,47,67,0.35)] sm:py-6 lg:py-8">
         {/* Cinematic background video */}
         <video
-          data-hero-video
           autoPlay
           muted
           loop
@@ -88,7 +111,7 @@ export default function Hero() {
         />
 
         {/* navbar lives inside the hero container */}
-        <div className="relative z-40">
+        <div className="relative z-40 opacity-0" data-hero-header>
           <Header embedded />
         </div>
 
@@ -99,7 +122,7 @@ export default function Hero() {
             <div>
               <p
                 data-hero-eyebrow
-                className="eyebrow mb-6 inline-flex items-center gap-2 rounded-full border border-green/20 bg-green/[0.06] px-4 py-1.5 text-green"
+                className="eyebrow mb-6 inline-flex items-center gap-2 rounded-full border border-green/20 bg-green/[0.06] px-4 py-1.5 text-green opacity-0"
               >
                 <span className="size-1.5 rounded-full bg-lime" />
                 {hero.eyebrow}
@@ -112,20 +135,20 @@ export default function Hero() {
                     data-hero-line
                     className="block overflow-hidden py-[0.02em]"
                   >
-                    <span className="inline-block">{line}</span>
+                    <span className="inline-block opacity-0">{line}</span>
                   </span>
                 ))}
               </h1>
 
               <p
                 data-hero-sub
-                className="mt-5 max-w-xl text-base text-slate/60 sm:text-lg"
+                className="mt-5 max-w-xl text-base text-slate/60 sm:text-lg opacity-0"
               >
                 {hero.sub}
               </p>
 
               <div className="mt-8 flex flex-wrap items-center gap-3">
-                <div data-hero-cta className="inline-flex">
+                <div data-hero-cta className="inline-flex opacity-0">
                   <Magnetic strength={0.25}>
                     <Link
                       href={hero.primaryCta.href}
@@ -135,7 +158,7 @@ export default function Hero() {
                     </Link>
                   </Magnetic>
                 </div>
-                <div data-hero-cta className="inline-flex">
+                <div data-hero-cta className="inline-flex opacity-0">
                   <Magnetic strength={0.25}>
                     <Link
                       href={hero.secondaryCta.href}
