@@ -1,26 +1,195 @@
 @import "tailwindcss";
 
+/* ============================================================
+   TechNature — Brand design system
+   Palette sampled from the official brand guidelines:
+   Navy #052F43 · Teal #0B5B66 · Green #1F9243
+   Lime #76B237 · Mist #F0F1F1 · Slate #212B34
+   Font: Poppins  ·  Tagline: "Technology Inspired by Nature"
+   ============================================================ */
+
+@theme {
+  --color-navy: #052f43;
+  --color-navy-700: #0a3a52;
+  --color-teal: #0b5b66;
+  --color-green: #1f9243;
+  --color-green-600: #18803a;
+  --color-lime: #8fd13f;
+  --color-lime-bright: #a6e84a;
+  --color-lime-dark: #76b237;
+  --color-mist: #f1f4f0;
+  --color-mist-200: #e7ecdf;
+  --color-slate: #14201c;
+  --color-ink: #0a1410;
+
+  --font-sans: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-mono), ui-monospace, monospace;
+
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg: #0a1410;
+  --fg: #f1f4f0;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+* {
+  box-sizing: border-box;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+  font-feature-settings: "ss01";
+}
+
+/* Lenis smooth scroll */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+/* ---- Typography helpers ---- */
+.eyebrow {
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  font-size: 0.72rem;
+  font-weight: 500;
+}
+/* Specifically make header navbar menu items use the Display Sans-Serif font (Poppins) and be bold */
+header nav a.eyebrow,
+.relative nav a.eyebrow,
+nav a.eyebrow {
+  font-family: var(--font-display);
+  font-weight: 700 !important;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.85rem;
+}
+.display {
+  font-family: var(--font-display);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 0.98;
+}
+.display-tight {
+  letter-spacing: -0.045em;
+  line-height: 0.92;
+}
+
+/* ---- Buttons ---- */
+.btn-lime {
+  background: var(--color-lime);
+  color: #0a1410;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  transition: transform 0.4s var(--ease-out-expo),
+    box-shadow 0.4s var(--ease-out-expo), background 0.3s;
+}
+.btn-lime:hover {
+  background: var(--color-lime-bright);
+  box-shadow: 0 12px 40px -12px var(--color-lime);
+}
+.btn-ghost {
+  border: 1px solid color-mix(in srgb, currentColor 28%, transparent);
+  border-radius: 999px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  transition: background 0.35s, border-color 0.35s;
+}
+.btn-ghost:hover {
+  background: color-mix(in srgb, currentColor 9%, transparent);
+}
+
+/* ---- Grain / texture ---- */
+.noise::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.045;
+  z-index: 1;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ---- Scroll reveal initial states ---- */
+.reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  will-change: transform, opacity;
+}
+
+/* Marquee */
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: marquee 38s linear infinite;
+}
+.marquee-track.paused:hover {
+  animation-play-state: paused;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+::selection {
+  background: var(--color-lime);
+  color: #0a1410;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-track {
+  background: #0a1410;
+}
+::-webkit-scrollbar-thumb {
+  background: #2a3a30;
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-lime-dark);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    opacity: 1;
+    transform: none;
+  }
+  .marquee-track {
+    animation: none;
+  }
 }
