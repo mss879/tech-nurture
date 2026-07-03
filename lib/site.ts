@@ -34,7 +34,6 @@ export const nav = [
       { label: "Maintenance & AMC", href: "/services/maintenance-amc" },
     ],
   },
-  { label: "Products", href: "/products" },
   { label: "Blog", href: "/blog" },
   { label: "Contact", href: "/contact" },
 ];
