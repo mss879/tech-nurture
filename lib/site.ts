@@ -9,19 +9,20 @@
 export const site = {
   name: "TechNurture",
   legal: "TechNurture Pvt Ltd",
+  // Registered company name & number (Certificate of Incorporation,
+  // Companies Act No 7 of 2007 — Registrar of Companies, Sri Lanka).
+  regName: "TechNurture (Pvt) Ltd",
+  regNo: "PV 00337653",
   tagline: "Technology Inspired by Nurture",
   parent: "Lusako Holdings Pvt Ltd",
-  // TODO(before launch): replace every placeholder below with the real
-  // business details. These values feed metadataBase, the sitemap, robots,
-  // and every JSON-LD block — so update them here and they propagate.
-  phone: "+94 11 234 5678", // TODO: real phone
-  phoneHref: "tel:+94112345678", // TODO: real phone (E.164)
-  whatsapp: "94771234567", // TODO: real WhatsApp (country code + number, no +)
-  email: "hello@technurture.lk", // TODO: real email
-  address: "Colombo, Sri Lanka", // TODO: real street address
-  domain: "technurture.lk", // TODO: real domain
+  phone: "+94 11 433 4886",
+  phoneHref: "tel:+94114334886",
+  whatsapp: "94771234567", // TODO: real WhatsApp/mobile number (landline above isn't WhatsApp)
+  email: "hello@technurture.lk", // TODO: confirm real email (domain is technurture.lk)
+  address: "19A, 1st Lane, Gothami Road, Colombo 08",
+  domain: "technurture.lk",
   hours: "Mon – Sat · 8:30am – 6:00pm", // TODO: confirm business hours
-  geo: { lat: 6.9271, lng: 79.8612 }, // TODO: real coordinates (currently Colombo)
+  geo: { lat: 6.9271, lng: 79.8612 }, // TODO: real coordinates (currently central Colombo)
   trustLine:
     "A subsidiary of Lusako Holdings Pvt Ltd, backed by over a decade of experience serving leading banks, hospitals, corporate organizations, and institutions across Sri Lanka.",
 };
@@ -40,7 +41,79 @@ export const nav = [
     ],
   },
   { label: "Blog", href: "/blog" },
+  { label: "Book", href: "/book" },
   { label: "Contact", href: "/contact" },
+];
+
+/* Social profiles. `label` maps to a brand icon in
+   components/layout/SocialLinks.tsx; the URLs also feed the
+   Organization JSON-LD `sameAs` in app/layout.tsx. */
+export const social = [
+  {
+    label: "TikTok",
+    href: "https://www.tiktok.com/@technurture.lk?_r=1&_t=ZS-988g3FFUIvQ",
+  },
+  {
+    label: "Facebook",
+    href: "https://www.facebook.com/share/18Ea8vsFV7/",
+  },
+  {
+    label: "Instagram",
+    href: "https://www.instagram.com/technurture.lk?igsh=MW1jOXZ4MG9qejJqMA==",
+  },
+];
+
+/* ============================================================
+   Service booking — shared source for the public /book form and
+   the admin bookings board (so the option lists never drift apart).
+   ============================================================ */
+
+// Service types a customer can book online.
+export const bookingServices = [
+  "Air Conditioning — Repair / Service",
+  "Air Conditioning — Installation",
+  "Air Conditioning — Gas Charging",
+  "Refrigerator / Freezer — Repair",
+  "Washing Machine — Repair",
+  "Annual Maintenance Contract (AMC)",
+  "Other",
+];
+
+// Preferred time slots for a visit.
+export const bookingTimeSlots = [
+  "Morning · 8:30am – 12:00pm",
+  "Afternoon · 12:00pm – 3:00pm",
+  "Evening · 3:00pm – 6:00pm",
+];
+
+// All 25 administrative districts of Sri Lanka (grouped by province,
+// listed for coverage across the whole island).
+export const districts = [
+  "Colombo",
+  "Gampaha",
+  "Kalutara",
+  "Kandy",
+  "Matale",
+  "Nuwara Eliya",
+  "Galle",
+  "Matara",
+  "Hambantota",
+  "Jaffna",
+  "Kilinochchi",
+  "Mannar",
+  "Vavuniya",
+  "Mullaitivu",
+  "Batticaloa",
+  "Ampara",
+  "Trincomalee",
+  "Kurunegala",
+  "Puttalam",
+  "Anuradhapura",
+  "Polonnaruwa",
+  "Badulla",
+  "Monaragala",
+  "Ratnapura",
+  "Kegalle",
 ];
 
 export const hero = {

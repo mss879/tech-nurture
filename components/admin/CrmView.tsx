@@ -69,6 +69,10 @@ export default function CrmView() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
+  // drag-and-drop between stages
+  const [dragLeadId, setDragLeadId] = useState<string | null>(null);
+  const [dragOverStage, setDragOverStage] = useState<string | null>(null);
+
   // pipeline add/rename
   const [addingPipeline, setAddingPipeline] = useState(false);
   const [renaming, setRenaming] = useState(false);
@@ -212,14 +216,10 @@ export default function CrmView() {
     }
   };
 
-  const moveLead = async (lead: Lead, direction: -1 | 1) => {
+  // Move a lead to a specific stage (optimistic), used by both the
+  // ◄ ► buttons and drag-and-drop.
+  const moveLeadToStage = async (leadId: string, stageId: string) => {
     if (!active) return;
-    const stages = active.crm_stages;
-    const idx = stages.findIndex((s) => s.id === lead.stage_id);
-    const target = stages[idx + direction];
-    if (!target) return;
-
-    // optimistic move
     setPipelines(
       (prev) =>
         prev?.map((p) =>
@@ -228,7 +228,7 @@ export default function CrmView() {
             : {
                 ...p,
                 crm_leads: p.crm_leads.map((l) =>
-                  l.id === lead.id ? { ...l, stage_id: target.id } : l
+                  l.id === leadId ? { ...l, stage_id: stageId } : l
                 ),
               }
         ) ?? null
@@ -237,12 +237,30 @@ export default function CrmView() {
       await api("/api/admin/crm/leads", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: lead.id, stageId: target.id }),
+        body: JSON.stringify({ id: leadId, stageId }),
       });
     } catch (e) {
       alert((e as Error).message);
       await load(active.id);
     }
+  };
+
+  const moveLead = (lead: Lead, direction: -1 | 1) => {
+    if (!active) return;
+    const stages = active.crm_stages;
+    const idx = stages.findIndex((s) => s.id === lead.stage_id);
+    const target = stages[idx + direction];
+    if (!target) return;
+    moveLeadToStage(lead.id, target.id);
+  };
+
+  const onDropToStage = (stageId: string) => {
+    setDragOverStage(null);
+    const id = dragLeadId;
+    setDragLeadId(null);
+    if (!id) return;
+    const lead = active?.crm_leads.find((l) => l.id === id);
+    if (lead && lead.stage_id !== stageId) moveLeadToStage(id, stageId);
   };
 
   const deleteLead = async (lead: Lead) => {
@@ -270,7 +288,7 @@ export default function CrmView() {
 
   return (
     <>
-      <PageHeader title="CRM" sub="Pipelines, stages and leads.">
+      <PageHeader title="CRM" sub="Drag leads between stages, or use the arrows.">
         <button
           onClick={() => {
             setPipelineName("");
@@ -365,7 +383,19 @@ export default function CrmView() {
             return (
               <div
                 key={stage.id}
-                className="flex w-72 shrink-0 flex-col rounded-2xl bg-slate-200/50 p-3"
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setDragOverStage(stage.id);
+                }}
+                onDragLeave={() =>
+                  setDragOverStage((s) => (s === stage.id ? null : s))
+                }
+                onDrop={() => onDropToStage(stage.id)}
+                className={`flex w-72 shrink-0 flex-col rounded-2xl p-3 transition-colors ${
+                  dragOverStage === stage.id
+                    ? "bg-lime/20 ring-2 ring-lime"
+                    : "bg-slate-200/50"
+                }`}
               >
                 <div className="mb-3 flex items-center justify-between px-1.5">
                   <h3 className="text-sm font-semibold text-slate-700">
@@ -384,7 +414,15 @@ export default function CrmView() {
                   {leads.map((lead) => (
                     <div
                       key={lead.id}
-                      className="rounded-xl border border-slate-200 bg-white p-3.5 shadow-sm"
+                      draggable
+                      onDragStart={() => setDragLeadId(lead.id)}
+                      onDragEnd={() => {
+                        setDragLeadId(null);
+                        setDragOverStage(null);
+                      }}
+                      className={`cursor-grab rounded-xl border border-slate-200 bg-white p-3.5 shadow-sm transition active:cursor-grabbing ${
+                        dragLeadId === lead.id ? "opacity-50" : ""
+                      }`}
                     >
                       <div className="flex items-start justify-between gap-2">
                         <p className="text-sm font-semibold text-slate-800">

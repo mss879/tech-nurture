@@ -4,7 +4,10 @@ import Image from "next/image";
 import { ArrowUpRight, Clock } from "lucide-react";
 import PageHero from "@/components/layout/PageHero";
 import Reveal from "@/components/ui/Reveal";
-import { posts } from "@/lib/site";
+import { getPublishedPosts } from "@/lib/blog";
+
+// Refresh the list from the CMS at most once a minute.
+export const revalidate = 60;
 
 export const metadata: Metadata = {
   title: "Blog",
@@ -21,7 +24,25 @@ function formatDate(d: string) {
   });
 }
 
-export default function BlogPage() {
+export default async function BlogPage() {
+  const posts = await getPublishedPosts();
+
+  if (posts.length === 0) {
+    return (
+      <>
+        <PageHero
+          eyebrow="Blog & Articles"
+          title="Insights and trends"
+          sub="New articles are on the way — check back soon."
+          page="Blog"
+        />
+        <section className="bg-mist py-24 text-center text-slate/60">
+          No articles published yet.
+        </section>
+      </>
+    );
+  }
+
   const [featured, ...rest] = posts;
   return (
     <>
@@ -55,13 +76,15 @@ export default function BlogPage() {
               </div>
               <div className="flex flex-col justify-center p-8 sm:p-12">
                 <div className="flex items-center gap-3 text-sm text-slate/50">
-                  <span className="eyebrow text-green">
-                    {featured.category}
-                  </span>
-                  <span>·</span>
-                  <span className="inline-flex items-center gap-1">
-                    <Clock className="size-3.5" /> {featured.readTime}
-                  </span>
+                  <span className="eyebrow text-green">{featured.category}</span>
+                  {featured.readTime && (
+                    <>
+                      <span>·</span>
+                      <span className="inline-flex items-center gap-1">
+                        <Clock className="size-3.5" /> {featured.readTime}
+                      </span>
+                    </>
+                  )}
                 </div>
                 <h2 className="display mt-4 text-3xl text-slate sm:text-4xl">
                   {featured.title}
@@ -97,11 +120,13 @@ export default function BlogPage() {
                   </div>
                   <div className="flex flex-1 flex-col p-7">
                     <div className="flex items-center gap-3 text-sm text-slate/50">
-                      <span className="eyebrow text-green">
-                        {post.category}
-                      </span>
-                      <span>·</span>
-                      <span>{post.readTime}</span>
+                      <span className="eyebrow text-green">{post.category}</span>
+                      {post.readTime && (
+                        <>
+                          <span>·</span>
+                          <span>{post.readTime}</span>
+                        </>
+                      )}
                     </div>
                     <h3 className="mt-3 text-xl font-semibold leading-snug text-slate">
                       {post.title}

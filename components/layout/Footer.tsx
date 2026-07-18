@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Phone, Mail, MapPin, MessageCircle } from "lucide-react";
 import { nav, site, creator, serviceCatalog, whatsappLink } from "@/lib/site";
+import SocialLinks from "@/components/layout/SocialLinks";
 
 export default function Footer() {
   return (
@@ -61,6 +62,7 @@ export default function Footer() {
               conditioners, refrigerators and washing machines — a subsidiary
               of {site.parent}.
             </p>
+            <SocialLinks className="mt-6" />
           </div>
 
           <div>
@@ -131,7 +133,8 @@ export default function Footer() {
 
         <div className="flex flex-col items-center justify-between gap-5 border-t border-white/10 py-7 text-xs text-white/45 sm:flex-row">
           <p>
-            © {new Date().getFullYear()} {site.legal}. All rights reserved.
+            © {new Date().getFullYear()} {site.regName} · Company Reg. No.{" "}
+            {site.regNo}. All rights reserved.
           </p>
 
           {/* Creator credit — dofollow backlink to ARC AI */}

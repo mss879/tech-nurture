@@ -4,7 +4,11 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Clock, ArrowUpRight } from "lucide-react";
 import Reveal from "@/components/ui/Reveal";
-import { posts, site, whatsappLink, getService } from "@/lib/site";
+import { site, whatsappLink, getService } from "@/lib/site";
+import { getPublishedPosts, getPublishedPost } from "@/lib/blog";
+
+// Regenerate an article at most once a minute so CMS edits go live.
+export const revalidate = 60;
 
 /* Map each post category to its service page so every article passes
    keyword-anchored internal links to the page that should rank. */
@@ -15,7 +19,8 @@ const categoryToService: Record<string, string> = {
   Maintenance: "maintenance-amc",
 };
 
-export function generateStaticParams() {
+export async function generateStaticParams() {
+  const posts = await getPublishedPosts();
   return posts.map((p) => ({ slug: p.slug }));
 }
 
@@ -25,15 +30,15 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const post = posts.find((p) => p.slug === slug);
+  const post = await getPublishedPost(slug);
   if (!post) return { title: "Article not found" };
   return {
-    title: post.title,
-    description: post.excerpt,
+    title: post.metaTitle ?? post.title,
+    description: post.metaDescription ?? post.excerpt,
     alternates: { canonical: `/blog/${post.slug}` },
     openGraph: {
-      title: post.title,
-      description: post.excerpt,
+      title: post.metaTitle ?? post.title,
+      description: post.metaDescription ?? post.excerpt,
       url: `/blog/${post.slug}`,
       type: "article",
       publishedTime: post.date,
@@ -55,10 +60,11 @@ export default async function BlogPost({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const post = posts.find((p) => p.slug === slug);
+  const post = await getPublishedPost(slug);
   if (!post) notFound();
 
-  const related = posts.filter((p) => p.slug !== slug).slice(0, 2);
+  const all = await getPublishedPosts();
+  const related = all.filter((p) => p.slug !== slug).slice(0, 2);
   const service = getService(categoryToService[post.category] ?? "");
 
   return (
@@ -74,10 +80,14 @@ export default async function BlogPost({
           </Link>
           <div className="mt-8 flex items-center gap-3 text-sm text-mist/60">
             <span className="eyebrow text-lime">{post.category}</span>
-            <span>·</span>
-            <span className="inline-flex items-center gap-1">
-              <Clock className="size-3.5" /> {post.readTime}
-            </span>
+            {post.readTime && (
+              <>
+                <span>·</span>
+                <span className="inline-flex items-center gap-1">
+                  <Clock className="size-3.5" /> {post.readTime}
+                </span>
+              </>
+            )}
           </div>
           <h1 className="display display-tight mt-5 text-4xl sm:text-6xl">
             {post.title}
@@ -139,10 +149,10 @@ export default async function BlogPost({
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
               <Link
-                href="/contact"
+                href="/book"
                 className="btn-lime px-6 py-3.5 text-sm uppercase tracking-wider"
               >
-                Book Inspection
+                Book a Service
               </Link>
               {service && (
                 <Link
@@ -168,39 +178,41 @@ export default async function BlogPost({
       </article>
 
       {/* related */}
-      <section className="bg-mist pb-24 text-slate">
-        <div className="mx-auto max-w-5xl px-6">
-          <h2 className="display text-2xl sm:text-3xl">Keep reading</h2>
-          <div className="mt-8 grid gap-6 sm:grid-cols-2">
-            {related.map((p) => (
-              <Link
-                key={p.slug}
-                href={`/blog/${p.slug}`}
-                className="group flex flex-col overflow-hidden rounded-[1.5rem] bg-mist-200 transition-colors hover:bg-white"
-              >
-                <div className="relative aspect-[16/9] overflow-hidden">
-                  <Image
-                    src={p.image}
-                    alt={p.title}
-                    fill
-                    sizes="(max-width: 768px) 100vw, 50vw"
-                    className="object-cover transition-transform duration-700 group-hover:scale-105"
-                  />
-                </div>
-                <div className="p-6">
-                  <span className="eyebrow text-green">{p.category}</span>
-                  <h3 className="mt-2 text-lg font-semibold leading-snug">
-                    {p.title}
-                  </h3>
-                  <span className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-green">
-                    Read <ArrowUpRight className="size-4" />
-                  </span>
-                </div>
-              </Link>
-            ))}
+      {related.length > 0 && (
+        <section className="bg-mist pb-24 text-slate">
+          <div className="mx-auto max-w-5xl px-6">
+            <h2 className="display text-2xl sm:text-3xl">Keep reading</h2>
+            <div className="mt-8 grid gap-6 sm:grid-cols-2">
+              {related.map((p) => (
+                <Link
+                  key={p.slug}
+                  href={`/blog/${p.slug}`}
+                  className="group flex flex-col overflow-hidden rounded-[1.5rem] bg-mist-200 transition-colors hover:bg-white"
+                >
+                  <div className="relative aspect-[16/9] overflow-hidden">
+                    <Image
+                      src={p.image}
+                      alt={p.title}
+                      fill
+                      sizes="(max-width: 768px) 100vw, 50vw"
+                      className="object-cover transition-transform duration-700 group-hover:scale-105"
+                    />
+                  </div>
+                  <div className="p-6">
+                    <span className="eyebrow text-green">{p.category}</span>
+                    <h3 className="mt-2 text-lg font-semibold leading-snug">
+                      {p.title}
+                    </h3>
+                    <span className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-green">
+                      Read <ArrowUpRight className="size-4" />
+                    </span>
+                  </div>
+                </Link>
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Article structured data */}
       <script
@@ -211,7 +223,9 @@ export default async function BlogPost({
             "@type": "Article",
             headline: post.title,
             description: post.excerpt,
-            image: `https://${site.domain}${post.image}`,
+            image: post.image.startsWith("http")
+              ? post.image
+              : `https://${site.domain}${post.image}`,
             datePublished: post.date,
             author: { "@type": "Organization", name: site.legal },
             publisher: { "@type": "Organization", name: site.legal },

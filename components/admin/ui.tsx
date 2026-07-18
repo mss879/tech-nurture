@@ -72,7 +72,7 @@ export function ErrorState({
             <code className="rounded bg-slate-100 px-1.5 py-0.5 text-xs">
               supabase/migrations
             </code>{" "}
-            (001 → 004) in the Supabase SQL editor. Then restart the dev
+            (001 → 011) in the Supabase SQL editor. Then restart the dev
             server.
           </p>
         </>
@@ -105,6 +105,9 @@ const badgeStyles: Record<string, string> = {
   cancelled: "bg-red-50 text-red-600 ring-red-200",
   in_crm: "bg-teal-50 text-teal-700 ring-teal-200",
   closed: "bg-slate-100 text-slate-500 ring-slate-200",
+  // service bookings
+  handling: "bg-orange-50 text-orange-700 ring-orange-200",
+  completed: "bg-green-50 text-green-700 ring-green-200",
 };
 
 export function StatusBadge({ status }: { status: string }) {

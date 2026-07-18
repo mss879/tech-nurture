@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Poppins, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
-import { site, creator } from "@/lib/site";
+import { site, creator, social } from "@/lib/site";
 
 const poppins = Poppins({
   variable: "--font-poppins",
@@ -131,8 +131,7 @@ export default function RootLayout({
                 "@type": "Organization",
                 name: site.parent,
               },
-              // TODO(before launch): add real social profile URLs.
-              sameAs: [],
+              sameAs: social.map((s) => s.href),
             }),
           }}
         />

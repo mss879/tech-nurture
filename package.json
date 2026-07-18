@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",
+    "@supabase/ssr": "^0.12.3",
     "@supabase/supabase-js": "^2.110.0",
     "@types/three": "^0.185.0",
     "gsap": "^3.15.0",

@@ -3,25 +3,47 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   MessageSquare,
+  CalendarCheck,
   KanbanSquare,
+  Users,
+  Newspaper,
   Globe,
+  LogOut,
   Menu,
   X,
 } from "lucide-react";
+import { createBrowserSupabase } from "@/lib/supabase/browser";
 
 const menu = [
   { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
-  { label: "Enquiries", href: "/admin/enquiries", icon: MessageSquare },
+  { label: "Inquiries", href: "/admin/enquiries", icon: MessageSquare },
+  { label: "Services Booking", href: "/admin/bookings", icon: CalendarCheck },
   { label: "CRM", href: "/admin/crm", icon: KanbanSquare },
+  { label: "Clients", href: "/admin/clients", icon: Users },
+  { label: "Blog", href: "/admin/blog", icon: Newspaper },
 ];
 
 export default function AdminSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
+
+  const signOut = async () => {
+    if (signingOut) return;
+    setSigningOut(true);
+    try {
+      await createBrowserSupabase().auth.signOut();
+    } catch {
+      // ignore — still send them to the login screen
+    }
+    router.replace("/admin/login");
+    router.refresh();
+  };
 
   const links = (
     <nav className="flex flex-col gap-1">
@@ -49,6 +71,24 @@ export default function AdminSidebar() {
     </nav>
   );
 
+  const footer = (
+    <div className="mt-auto space-y-1 border-t border-white/10 pt-4">
+      <Link
+        href="/"
+        className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm text-white/50 transition-colors hover:bg-white/5 hover:text-white"
+      >
+        <Globe className="size-4.5" /> View website
+      </Link>
+      <button
+        onClick={signOut}
+        disabled={signingOut}
+        className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm text-white/50 transition-colors hover:bg-white/5 hover:text-white disabled:opacity-50"
+      >
+        <LogOut className="size-4.5" /> {signingOut ? "Signing out…" : "Sign out"}
+      </button>
+    </div>
+  );
+
   return (
     <>
       {/* mobile top bar */}
@@ -74,14 +114,9 @@ export default function AdminSidebar() {
         </button>
       </div>
       {open && (
-        <div className="fixed inset-x-0 top-[57px] z-40 border-t border-white/10 bg-ink p-4 lg:hidden">
+        <div className="fixed inset-x-0 top-[57px] z-40 flex max-h-[calc(100vh-57px)] flex-col overflow-y-auto border-t border-white/10 bg-ink p-4 lg:hidden">
           {links}
-          <Link
-            href="/"
-            className="mt-3 flex items-center gap-3 rounded-xl px-4 py-3 text-sm text-white/50 hover:text-white"
-          >
-            <Globe className="size-4.5" /> View website
-          </Link>
+          {footer}
         </div>
       )}
       {/* desktop sidebar */}
@@ -99,14 +134,7 @@ export default function AdminSidebar() {
           </span>
         </Link>
         {links}
-        <div className="mt-auto border-t border-white/10 pt-4">
-          <Link
-            href="/"
-            className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm text-white/50 transition-colors hover:bg-white/5 hover:text-white"
-          >
-            <Globe className="size-4.5" /> View website
-          </Link>
-        </div>
+        {footer}
       </aside>
     </>
   );

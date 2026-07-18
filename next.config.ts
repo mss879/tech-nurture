@@ -8,6 +8,16 @@ const nextConfig: NextConfig = {
   compress: true,
   images: {
     formats: ["image/avif", "image/webp"],
+    // Blog cover images uploaded through the admin live in Supabase Storage
+    // (https://<project-ref>.supabase.co/storage/v1/object/public/blog/...).
+    // Allow next/image to optimize them.
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "**.supabase.co",
+        pathname: "/storage/v1/object/public/**",
+      },
+    ],
   },
   async headers() {
     return [
