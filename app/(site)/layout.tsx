@@ -3,6 +3,7 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import Preloader from "@/components/ui/Preloader";
 import Tracker from "@/components/analytics/Tracker";
+import ChatWidget from "@/components/ai/ChatWidget";
 
 export default function SiteLayout({
   children,
@@ -16,6 +17,7 @@ export default function SiteLayout({
         <Footer />
       </SmoothScroll>
       <Tracker />
+      <ChatWidget />
     </>
   );
 }

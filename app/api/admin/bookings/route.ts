@@ -3,14 +3,29 @@ import { phoneKey } from "@/lib/phone";
 
 const STATUSES = ["new", "handling", "completed", "cancelled"];
 
-export async function GET() {
+export async function GET(request: Request) {
   const supabase = getServerSupabase();
   if (!supabase) return notConfigured();
 
-  const { data: bookings, error } = await supabase
-    .from("bookings")
-    .select("*")
-    .order("created_at", { ascending: false });
+  // Optional ?month=YYYY-MM → only bookings whose preferred_date falls in that
+  // month (used by the dashboard calendar). Otherwise return everything.
+  const month = new URL(request.url).searchParams.get("month");
+  let query = supabase.from("bookings").select("*");
+  const m = month && /^\d{4}-\d{2}$/.test(month) ? month : null;
+  if (m) {
+    const [y, mo] = m.split("-").map(Number);
+    const start = `${m}-01`;
+    const endDate = new Date(Date.UTC(y, mo, 1)); // first day of next month
+    const end = endDate.toISOString().slice(0, 10);
+    query = query
+      .gte("preferred_date", start)
+      .lt("preferred_date", end)
+      .order("preferred_date", { ascending: true });
+  } else {
+    query = query.order("created_at", { ascending: false });
+  }
+
+  const { data: bookings, error } = await query;
 
   if (error) {
     console.error("bookings list failed:", error);

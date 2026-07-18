@@ -24,6 +24,7 @@ import {
   PageHeader,
   formatDate,
 } from "./ui";
+import BookingsCalendar from "./BookingsCalendar";
 
 type Stats = {
   total_enquiries: number;
@@ -187,6 +188,11 @@ export default function DashboardView() {
             </p>
           </Link>
         ))}
+      </div>
+
+      {/* bookings calendar */}
+      <div className="mt-8">
+        <BookingsCalendar />
       </div>
 
       {/* analytics */}
