@@ -102,21 +102,29 @@ export default function Header({ embedded = false }: { embedded?: boolean }) {
 
   const rightActions = (
     <div className="flex items-center gap-3">
-      <Magnetic strength={0.2} className="hidden sm:inline-block">
-        <Link
-          href="/contact"
-          className="btn-lime inline-flex items-center px-5 py-2.5 text-[0.78rem] uppercase tracking-wider"
-        >
-          Book Inspection
-        </Link>
-      </Magnetic>
+      {/* CTA only on desktop, where the nav is visible.
+          Outer div owns visibility — Magnetic hard-codes inline-flex which
+          would otherwise override a `hidden` class on the same element. */}
+      <div className="hidden xl:block">
+        <Magnetic strength={0.2}>
+          <Link
+            href="/contact"
+            className="btn-lime inline-flex items-center px-5 py-2.5 text-[0.78rem] uppercase tracking-wider"
+          >
+            Book Inspection
+          </Link>
+        </Magnetic>
+      </div>
 
+      {/* Mobile / tablet: a single labelled menu button */}
       <button
         onClick={() => setMenuOpen((v) => !v)}
-        aria-label="Toggle menu"
-        className="grid size-10 place-items-center rounded-full border border-slate-200 text-slate transition hover:border-slate-300 hover:bg-slate-50 xl:hidden"
+        aria-label={menuOpen ? "Close menu" : "Open menu"}
+        aria-expanded={menuOpen}
+        className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-[0.72rem] font-semibold uppercase tracking-wider text-slate transition hover:border-slate-300 hover:bg-slate-50 xl:hidden"
       >
-        {menuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
+        {menuOpen ? <X className="size-4" /> : <Menu className="size-4" />}
+        {menuOpen ? "Close" : "Menu"}
       </button>
     </div>
   );
@@ -198,11 +206,11 @@ export default function Header({ embedded = false }: { embedded?: boolean }) {
   return (
     <>
       <header
-        className={`pointer-events-auto z-45 mx-auto flex max-w-7xl items-center justify-between rounded-2xl border bg-white/95 px-6 py-1.5 shadow-md backdrop-blur-md transition-all duration-300 sm:py-2
-          ${isSticky
-            ? "fixed inset-x-4 top-4 sm:inset-x-6 sm:top-6 lg:inset-x-8 lg:top-8 border-slate-200/50"
-            : "absolute inset-x-4 top-4 sm:inset-x-6 sm:top-6 lg:inset-x-8 lg:top-8 border-slate-200/30"
-          }`}
+        className={`pointer-events-auto z-45 mx-auto flex max-w-7xl items-center justify-between border-b bg-white/95 px-5 py-2.5 shadow-md backdrop-blur-md transition-all duration-300
+          inset-x-0 top-0 rounded-none
+          sm:inset-x-6 sm:top-6 sm:rounded-2xl sm:border sm:px-6 sm:py-2
+          lg:inset-x-8 lg:top-8
+          ${isSticky ? "fixed border-slate-200/60" : "absolute border-slate-200/40"}`}
       >
         {logo}
         {desktopNav}
@@ -210,11 +218,8 @@ export default function Header({ embedded = false }: { embedded?: boolean }) {
       </header>
 
       <div
-        className={`pointer-events-auto z-40 inset-x-4 transition-all duration-300
-          ${isSticky
-            ? "fixed top-[72px] sm:top-[80px]"
-            : "absolute top-[72px] sm:top-[80px]"
-          }`}
+        className={`pointer-events-auto z-40 inset-x-3 top-[60px] transition-all duration-300 sm:inset-x-6 sm:top-[80px] lg:inset-x-8
+          ${isSticky ? "fixed" : "absolute"}`}
       >
         {mobileMenu}
       </div>

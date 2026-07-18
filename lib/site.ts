@@ -571,8 +571,8 @@ export const servicePlans = {
     {
       id: "comprehensive",
       name: "Comprehensive",
-      badge: "MOST POPULAR",
-      featured: true,
+      badge: "",
+      featured: false,
       priceLabel: "Maximum protection with predictable, fixed maintenance costs for critical operations.",
       points: [
         "Scheduled preventive maintenance",
@@ -586,8 +586,8 @@ export const servicePlans = {
     {
       id: "non-comprehensive",
       name: "Non-Comprehensive",
-      badge: "",
-      featured: false,
+      badge: "MOST POPULAR",
+      featured: true,
       priceLabel: "Professional servicing and technical support, with replacement parts managed separately.",
       points: [
         "Scheduled preventive maintenance",
