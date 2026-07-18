@@ -4,13 +4,8 @@ export async function GET() {
   const supabase = getServerSupabase();
   if (!supabase) return notConfigured();
 
-  const [stats, recentOrders, recentEnquiries] = await Promise.all([
+  const [stats, recentEnquiries] = await Promise.all([
     supabase.from("dashboard_stats").select("*").single(),
-    supabase
-      .from("orders")
-      .select("id, created_at, customer_name, phone, total, status")
-      .order("created_at", { ascending: false })
-      .limit(5),
     supabase
       .from("enquiries")
       .select("id, created_at, name, phone, service, status")
@@ -31,7 +26,6 @@ export async function GET() {
 
   return Response.json({
     stats: stats.data,
-    recentOrders: recentOrders.data ?? [],
     recentEnquiries: recentEnquiries.data ?? [],
   });
 }

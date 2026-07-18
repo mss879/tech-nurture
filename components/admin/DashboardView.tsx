@@ -3,10 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import {
-  ShoppingBag,
   MessageSquare,
   KanbanSquare,
-  Banknote,
   ArrowUpRight,
 } from "lucide-react";
 import {
@@ -17,27 +15,15 @@ import {
   StatusBadge,
   PageHeader,
   formatDate,
-  formatLKR,
 } from "./ui";
 
 type Summary = {
   stats: {
-    total_orders: number;
-    new_orders: number;
-    order_value: number;
     total_enquiries: number;
     new_enquiries: number;
     pipelines: number;
     leads: number;
   };
-  recentOrders: {
-    id: string;
-    created_at: string;
-    customer_name: string;
-    phone: string;
-    total: number;
-    status: string;
-  }[];
   recentEnquiries: {
     id: string;
     created_at: string;
@@ -75,7 +61,7 @@ export default function DashboardView() {
       <>
         <PageHeader
           title="Dashboard"
-          sub="Overview of orders, enquiries and your CRM."
+          sub="Overview of enquiries and your CRM."
         />
         <ErrorState error={error ?? new Error("No data")} onRetry={load} />
       </>
@@ -84,20 +70,6 @@ export default function DashboardView() {
 
   const { stats } = data;
   const cards = [
-    {
-      label: "Orders",
-      value: stats.total_orders,
-      hint: `${stats.new_orders} new`,
-      icon: ShoppingBag,
-      href: "/admin/orders",
-    },
-    {
-      label: "Order value",
-      value: formatLKR(stats.order_value),
-      hint: "excl. cancelled",
-      icon: Banknote,
-      href: "/admin/orders",
-    },
     {
       label: "Enquiries",
       value: stats.total_enquiries,
@@ -122,7 +94,7 @@ export default function DashboardView() {
       />
 
       {/* stat cards */}
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {cards.map((c) => (
           <Link
             key={c.label}
@@ -147,48 +119,7 @@ export default function DashboardView() {
       </div>
 
       {/* recent previews */}
-      <div className="mt-8 grid gap-6 xl:grid-cols-2">
-        <section className="rounded-2xl border border-slate-200 bg-white">
-          <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
-            <h2 className="font-semibold text-slate-800">Recent orders</h2>
-            <Link
-              href="/admin/orders"
-              className="text-sm font-medium text-green hover:underline"
-            >
-              View all
-            </Link>
-          </div>
-          {data.recentOrders.length === 0 ? (
-            <p className="px-6 py-10 text-center text-sm text-slate-400">
-              No orders yet — they&apos;ll appear here when customers checkout.
-            </p>
-          ) : (
-            <ul className="divide-y divide-slate-100">
-              {data.recentOrders.map((o) => (
-                <li
-                  key={o.id}
-                  className="flex items-center justify-between gap-4 px-6 py-4"
-                >
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-slate-800">
-                      {o.customer_name}
-                    </p>
-                    <p className="text-xs text-slate-400">
-                      {o.phone} · {formatDate(o.created_at)}
-                    </p>
-                  </div>
-                  <div className="flex shrink-0 items-center gap-3">
-                    <span className="text-sm font-semibold text-slate-700">
-                      {formatLKR(o.total)}
-                    </span>
-                    <StatusBadge status={o.status} />
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-
+      <div className="mt-8 grid gap-6">
         <section className="rounded-2xl border border-slate-200 bg-white">
           <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
             <h2 className="font-semibold text-slate-800">Recent enquiries</h2>

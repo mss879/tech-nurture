@@ -9,8 +9,9 @@ import { posts, site, whatsappLink, getService } from "@/lib/site";
 /* Map each post category to its service page so every article passes
    keyword-anchored internal links to the page that should rank. */
 const categoryToService: Record<string, string> = {
-  "Water Purification": "water-purification",
   "Air Conditioning": "air-conditioning",
+  Refrigerator: "refrigerator",
+  "Washing Machine": "washing-machine",
   Maintenance: "maintenance-amc",
 };
 
@@ -215,6 +216,36 @@ export default async function BlogPost({
             author: { "@type": "Organization", name: site.legal },
             publisher: { "@type": "Organization", name: site.legal },
             mainEntityOfPage: `https://${site.domain}/blog/${post.slug}`,
+          }),
+        }}
+      />
+      {/* Breadcrumb structured data */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              {
+                "@type": "ListItem",
+                position: 1,
+                name: "Home",
+                item: `https://${site.domain}`,
+              },
+              {
+                "@type": "ListItem",
+                position: 2,
+                name: "Blog",
+                item: `https://${site.domain}/blog`,
+              },
+              {
+                "@type": "ListItem",
+                position: 3,
+                name: post.title,
+                item: `https://${site.domain}/blog/${post.slug}`,
+              },
+            ],
           }),
         }}
       />

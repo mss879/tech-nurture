@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Droplets, Wind, ShieldCheck, ArrowUpRight, Check } from "lucide-react";
+import { AirVent, Refrigerator, WashingMachine, Wrench, ArrowUpRight, Check } from "lucide-react";
 import PageHero from "@/components/layout/PageHero";
 import Reveal from "@/components/ui/Reveal";
 import { serviceCatalog, site } from "@/lib/site";
@@ -8,14 +8,15 @@ import { serviceCatalog, site } from "@/lib/site";
 export const metadata: Metadata = {
   title: "Our Services",
   description:
-    "Explore TechNurture's professional services across Sri Lanka — water purification, air conditioning and annual maintenance contracts. Island-wide coverage, trained technicians.",
+    "Explore TechNurture's professional appliance services across Sri Lanka — air conditioning, refrigerator and washing machine repair, plus annual maintenance contracts. Island-wide coverage, trained technicians.",
   alternates: { canonical: "/services" },
 };
 
 const iconMap: Record<string, React.ElementType> = {
-  droplet: Droplets,
-  wind: Wind,
-  shield: ShieldCheck,
+  air: AirVent,
+  fridge: Refrigerator,
+  washer: WashingMachine,
+  wrench: Wrench,
 };
 
 export default function ServicesPage() {
@@ -30,9 +31,9 @@ export default function ServicesPage() {
 
       <section className="bg-mist py-20 text-slate sm:py-28">
         <div className="mx-auto max-w-7xl px-6">
-          <div className="grid gap-5 lg:grid-cols-3">
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {serviceCatalog.map((s, i) => {
-              const Icon = iconMap[s.icon] ?? Droplets;
+              const Icon = iconMap[s.icon] ?? Wrench;
               return (
                 <Reveal key={s.slug} delay={i * 0.08} as="div">
                   <Link

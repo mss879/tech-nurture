@@ -57,8 +57,9 @@ export default function Footer() {
               />
             </div>
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-white/55">
-              {site.tagline}. Water purification & air conditioning solutions
-              you can depend on — a subsidiary of {site.parent}.
+              {site.tagline}. Expert repair and maintenance for air
+              conditioners, refrigerators and washing machines — a subsidiary
+              of {site.parent}.
             </p>
           </div>
 
@@ -75,14 +76,6 @@ export default function Footer() {
                   </Link>
                 </li>
               ))}
-              <li>
-                <Link
-                  href="/shop"
-                  className="text-white/70 transition hover:text-lime"
-                >
-                  Shop
-                </Link>
-              </li>
             </ul>
           </div>
 

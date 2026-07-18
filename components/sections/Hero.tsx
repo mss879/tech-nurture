@@ -12,6 +12,17 @@ import { hero } from "@/lib/site";
 export default function Hero() {
   const root = useRef<HTMLDivElement>(null);
   const [isLoaded, setIsLoaded] = useState(false);
+  // Only load the 8MB background video on larger screens; phones get the
+  // lightweight poster image instead (saves bandwidth + battery).
+  const [isDesktop, setIsDesktop] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 768px)");
+    const update = () => setIsDesktop(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
 
   useEffect(() => {
     if ((window as unknown as { __preloaderComplete?: boolean }).__preloaderComplete) {
@@ -79,16 +90,26 @@ export default function Hero() {
     // 3px gap on every edge — the hero is a floating rounded card.
     <section ref={root} className="p-[3px]">
       <div className="relative flex min-h-[calc(100svh-6px)] flex-col overflow-hidden rounded-[2rem] border border-black/[0.06] bg-gradient-to-br from-mist via-white to-mist-200 px-[5%] py-5 shadow-[0_30px_80px_-40px_rgba(5,47,67,0.35)] sm:py-6 lg:py-8">
-        {/* Cinematic background video */}
-        <video
-          autoPlay
-          muted
-          loop
-          playsInline
-          className="absolute inset-0 h-full w-full object-cover z-0"
-        >
-          <source src="/3D_particle_field_animation_wave…_202607020045.mp4" type="video/mp4" />
-        </video>
+        {/* Cinematic background — video on desktop, poster image on mobile */}
+        {isDesktop ? (
+          <video
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="metadata"
+            poster="/hero-poster.jpg"
+            className="absolute inset-0 h-full w-full object-cover z-0"
+          >
+            <source src="/hero-particles.mp4" type="video/mp4" />
+          </video>
+        ) : (
+          <div
+            aria-hidden
+            className="absolute inset-0 z-0 bg-cover bg-center"
+            style={{ backgroundImage: "url(/hero-poster.jpg)" }}
+          />
+        )}
 
         {/* High-end gradient mask fading from the top down (for navbar) */}
         <div 

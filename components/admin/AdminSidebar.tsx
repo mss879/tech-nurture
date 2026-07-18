@@ -6,7 +6,6 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
-  ShoppingBag,
   MessageSquare,
   KanbanSquare,
   Globe,
@@ -16,7 +15,6 @@ import {
 
 const menu = [
   { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
-  { label: "Orders", href: "/admin/orders", icon: ShoppingBag },
   { label: "Enquiries", href: "/admin/enquiries", icon: MessageSquare },
   { label: "CRM", href: "/admin/crm", icon: KanbanSquare },
 ];

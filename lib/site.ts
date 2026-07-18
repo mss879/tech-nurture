@@ -1,7 +1,7 @@
 /* ============================================================
-   TechNature — central content source
-   All copy is drawn from the client briefs (About, Website
-   Structure, FAQs, AMC, General Suggestions, Products).
+   TechNurture — central content source
+   Home-appliance service business: Air Conditioning, Refrigerator
+   & Freezer, Washing Machine, and Maintenance & AMC.
    Brand: TechNurture Pvt Ltd · Tagline: "Technology Inspired by Nurture"
    Subsidiary of Lusako Holdings Pvt Ltd.
    ============================================================ */
@@ -11,13 +11,17 @@ export const site = {
   legal: "TechNurture Pvt Ltd",
   tagline: "Technology Inspired by Nurture",
   parent: "Lusako Holdings Pvt Ltd",
-  // Placeholders — replace with real details before launch.
-  phone: "+94 11 234 5678",
-  phoneHref: "tel:+94112345678",
-  whatsapp: "94771234567",
-  email: "hello@technurture.lk",
-  address: "Colombo, Sri Lanka",
-  domain: "technurture.lk",
+  // TODO(before launch): replace every placeholder below with the real
+  // business details. These values feed metadataBase, the sitemap, robots,
+  // and every JSON-LD block — so update them here and they propagate.
+  phone: "+94 11 234 5678", // TODO: real phone
+  phoneHref: "tel:+94112345678", // TODO: real phone (E.164)
+  whatsapp: "94771234567", // TODO: real WhatsApp (country code + number, no +)
+  email: "hello@technurture.lk", // TODO: real email
+  address: "Colombo, Sri Lanka", // TODO: real street address
+  domain: "technurture.lk", // TODO: real domain
+  hours: "Mon – Sat · 8:30am – 6:00pm", // TODO: confirm business hours
+  geo: { lat: 6.9271, lng: 79.8612 }, // TODO: real coordinates (currently Colombo)
   trustLine:
     "A subsidiary of Lusako Holdings Pvt Ltd, backed by over a decade of experience serving leading banks, hospitals, corporate organizations, and institutions across Sri Lanka.",
 };
@@ -29,8 +33,9 @@ export const nav = [
     label: "Services",
     href: "/services",
     children: [
-      { label: "Water Purification", href: "/services/water-purification" },
       { label: "Air Conditioning", href: "/services/air-conditioning" },
+      { label: "Refrigerator & Freezer", href: "/services/refrigerator" },
+      { label: "Washing Machine", href: "/services/washing-machine" },
       { label: "Maintenance & AMC", href: "/services/maintenance-amc" },
     ],
   },
@@ -49,7 +54,7 @@ export const hero = {
     { label: "Genuine Parts", color: "lime" },
   ],
   headline: ["Reliable systems.", "Total confidence."],
-  sub: "Professional water purification, cooling, and maintenance systems designed to nurture healthy, efficient spaces across Sri Lanka.",
+  sub: "Expert repair, servicing and maintenance for air conditioners, refrigerators and washing machines — keeping homes and businesses across Sri Lanka cool, fresh and running.",
   primaryCta: { label: "Explore Services", href: "/services" },
   secondaryCta: { label: "Contact Us", href: "/contact" },
 };
@@ -69,13 +74,13 @@ export const creator = {
 export const stats = [
   { value: 10, suffix: "+", label: "Years of industry experience" },
   { value: 100, suffix: "%", label: "Island-wide service coverage" },
-  { value: 500, suffix: "+", label: "Systems installed & maintained" },
+  { value: 500, suffix: "+", label: "Appliances serviced & repaired" },
 ];
 
 export const partnershipsIntro = {
   eyebrow: "Industries We Serve",
   title: "Over a decade keeping Sri Lanka running.",
-  body: "From idea to installation to lifelong maintenance, we combine technical expertise and a customer-first approach to keep your water and cooling systems performing — for households and the country's most demanding institutions.",
+  body: "From first diagnosis to expert repair to lifelong maintenance, we combine technical skill and a customer-first approach to keep your appliances performing — for households and the country's most demanding institutions.",
 };
 
 export const industries = [
@@ -92,21 +97,21 @@ export const industries = [
 
 export const about = {
   eyebrow: "About Us",
-  heading: "We help homes and businesses run cleaner, cooler and with total confidence.",
-  body: "TechNurture Pvt Ltd brings reliable products, professional service and modern processes to help you install, maintain and depend on your water purification and air conditioning systems.",
+  heading: "We help homes and businesses run cooler, fresher and with total confidence.",
+  body: "TechNurture Pvt Ltd brings reliable technicians, professional service and modern processes to help you repair, maintain and depend on your air conditioners, refrigerators and washing machines.",
   story:
-    "TechNurture Pvt Ltd is a technology solutions company dedicated to delivering reliable products, professional services, and exceptional customer experiences across Sri Lanka. As a subsidiary of Lusako Holdings Pvt Ltd, TechNurture is built on a foundation of innovation, operational excellence, and customer-centric service.",
+    "TechNurture Pvt Ltd is a home-appliance service company dedicated to delivering reliable repairs, professional maintenance, and exceptional customer experiences across Sri Lanka. As a subsidiary of Lusako Holdings Pvt Ltd, TechNurture is built on a foundation of technical excellence, operational discipline, and customer-centric service.",
   heritage:
     "Backed by over a decade of industry experience through the Lusako Group, we have successfully served a diverse portfolio of clients — including leading banks, hospitals, corporate organizations, educational institutions, manufacturing facilities, and government establishments. Our reputation has been built through consistent service delivery, technical expertise, and an unwavering commitment to customer satisfaction.",
   mission:
-    "To empower homes and businesses with innovative technology solutions supported by exceptional service, professional expertise, and a commitment to long-term customer success.",
+    "To keep every home and business running smoothly with fast, honest appliance repair and maintenance — backed by exceptional service, professional expertise, and long-term customer success.",
   vision:
-    "To become Sri Lanka's most trusted technology solutions and service provider, recognized for innovation, reliability, and customer satisfaction.",
+    "To become Sri Lanka's most trusted home-appliance service provider, recognized for reliability, technical excellence, and customer satisfaction.",
   values: [
-    { title: "Integrity", body: "Transparency and accountability in every project we deliver." },
-    { title: "Reliability", body: "Standardized processes and trained technicians, every single time." },
-    { title: "Excellence", body: "Quality products and high service standards we stand behind." },
-    { title: "Customer Focus", body: "Every solution designed around your needs and long-term value." },
+    { title: "Integrity", body: "Transparent diagnosis and honest pricing on every job we take on." },
+    { title: "Reliability", body: "Standardized procedures and trained technicians, every single time." },
+    { title: "Excellence", body: "Genuine parts and high service standards we stand behind." },
+    { title: "Customer Focus", body: "Every repair designed around your needs and long-term value." },
     { title: "Continuous Improvement", body: "We keep refining our systems, tools and processes." },
   ],
 };
@@ -114,24 +119,30 @@ export const about = {
 export const services = {
   eyebrow: "Services",
   heading: "Expertise built on insight & experience",
-  sub: "We deliver dependable solutions grounded in over a decade of field experience, genuine parts and proven service procedures.",
+  sub: "Dependable appliance repair and maintenance grounded in over a decade of field experience, genuine parts and proven service procedures.",
   cards: [
     {
-      icon: "droplet",
-      title: "Water Purification",
-      body: "Installation, repairs, preventive maintenance, filter replacement and water-quality assessment for RO, UV, UF and multi-stage systems.",
-      points: ["Installation", "Repairs", "Filter Replacement", "Water Quality Assessment"],
-    },
-    {
-      icon: "wind",
+      icon: "air",
       title: "Air Conditioning",
-      body: "Installation, servicing, gas charging, troubleshooting and repairs for residential and commercial cooling — keeping systems efficient.",
-      points: ["Installation", "Maintenance", "Gas Charging", "Commercial AC Support"],
+      body: "Repair, servicing, gas charging and installation for split, inverter and commercial AC — efficient cooling with lower bills.",
+      points: ["Repairs", "Servicing", "Gas Charging", "Installation"],
     },
     {
-      icon: "shield",
+      icon: "fridge",
+      title: "Refrigerator & Freezer",
+      body: "Cooling faults, gas refilling, compressor, thermostat and door-seal repairs for fridges and freezers of every brand.",
+      points: ["No-Cooling Repair", "Gas Refilling", "Compressor & PCB", "Commercial Units"],
+    },
+    {
+      icon: "washer",
+      title: "Washing Machine",
+      body: "Drain, spin, motor, drum and PCB repairs for front-load, top-load and fully-automatic washing machines.",
+      points: ["Drain & Spin", "Motor & Drum", "Electronics & PCB", "Inlet & Leaks"],
+    },
+    {
+      icon: "wrench",
       title: "Maintenance & AMC",
-      body: "Scheduled preventive maintenance and annual service contracts that reduce breakdowns, extend equipment life and cut long-term costs.",
+      body: "Scheduled preventive maintenance and annual service contracts that reduce breakdowns and extend appliance life.",
       points: ["Comprehensive AMC", "Non-Comprehensive AMC", "On-Call Service", "Priority Support"],
     },
   ],
@@ -144,94 +155,34 @@ export const services = {
 
    SEO keyword map (one primary target per page — keep these
    distinct to avoid cannibalization):
-   · /services/water-purification → "water purifier service /
-     repair / installation Sri Lanka" (service intent)
-   · /services/air-conditioning   → "AC service / repair /
-     installation Sri Lanka" (service intent)
-   · /services/maintenance-amc    → "annual maintenance contract
-     (AMC) Sri Lanka" (service intent)
-   · /shop + /shop/[slug]         → "buy water purifier online /
-     price Sri Lanka" + Lusako model numbers (buy intent)
-   · /products                    → product range / genuine filters
-     & spare parts (catalogue intent)
-   · /blog/*                      → long-tail informational
+   · /services/air-conditioning → "AC repair / service / installation
+     Sri Lanka" (service intent)
+   · /services/refrigerator     → "refrigerator / fridge repair
+     Sri Lanka" (service intent)
+   · /services/washing-machine  → "washing machine repair Sri Lanka"
+     (service intent)
+   · /services/maintenance-amc  → "appliance annual maintenance
+     contract (AMC) Sri Lanka" (service intent)
+   · /blog/*                    → long-tail informational
    ============================================================ */
 export const serviceCatalog = [
   {
-    slug: "water-purification",
-    icon: "droplet",
-    title: "Water Purification",
-    h1: "Water Purification Services in Sri Lanka",
-    tagline: "Safe, clean, great-tasting water — installed and maintained.",
-    summary:
-      "Design, installation and lifelong maintenance of RO, UV, UF and multi-stage water purification systems for homes, offices and institutions.",
-    metaTitle: "Water Purifier Service, Repair & Installation in Sri Lanka",
-    metaDescription:
-      "Expert water purifier service, repair and installation across Sri Lanka. RO, UV, UF and multi-stage systems, genuine filter replacement and free water-quality checks by TechNurture.",
-    keywords: [
-      "water purifier service Sri Lanka",
-      "water purifier repair",
-      "RO water purifier installation",
-      "water filter replacement Sri Lanka",
-      "water purification services",
-    ],
-    image: "/services/water-purification.png",
-    intro: {
-      heading: "Clean water you can rely on, day after day.",
-      body: [
-        "From selecting the right system to installing it correctly and keeping it running for years, our team handles every stage of your water purification needs. We work with domestic and commercial RO, UV, UF and multi-stage systems.",
-        "Our technicians service most major brands and models — regardless of who originally installed the system — using genuine filters and consumables so your water stays safe and your equipment stays efficient.",
-      ],
-      highlights: [
-        "RO, UV, UF & multi-stage systems",
-        "Genuine filters & consumables",
-        "Domestic & commercial scale",
-        "Water-quality assessment",
-      ],
-    },
-    offerings: [
-      {
-        title: "New Installation",
-        body: "Correct sizing, placement and commissioning for domestic and commercial purifiers, done to manufacturer standards.",
-      },
-      {
-        title: "Repairs & Troubleshooting",
-        body: "Fast diagnosis and repair of leaks, low flow, taste or odour issues, pump and membrane faults.",
-      },
-      {
-        title: "Filter Replacement",
-        body: "Scheduled replacement of sediment, carbon, RO membranes, UV lamps and mineral cartridges before quality drops.",
-      },
-      {
-        title: "Water Quality Assessment",
-        body: "On-site testing so every recommendation is backed by real data about your water.",
-      },
-    ],
-    steps: [
-      { n: "01", title: "Assess", body: "We test your water and understand your usage and space." },
-      { n: "02", title: "Recommend", body: "A tailored system and transparent quotation — no surprises." },
-      { n: "03", title: "Install", body: "Professional installation and commissioning by trained technicians." },
-      { n: "04", title: "Maintain", body: "Scheduled servicing and filter changes keep quality consistent." },
-    ],
-    related: ["air-conditioning", "maintenance-amc"],
-  },
-  {
     slug: "air-conditioning",
-    icon: "wind",
+    icon: "air",
     title: "Air Conditioning",
-    h1: "Air Conditioning Services in Sri Lanka",
+    h1: "Air Conditioning Repair & Service in Sri Lanka",
     tagline: "Efficient, reliable cooling for homes and businesses.",
     summary:
-      "Installation, servicing, gas charging and repairs for split, inverter and commercial air conditioning — keeping systems efficient and bills low.",
-    metaTitle: "AC Service, Repair & Installation in Sri Lanka",
+      "Repair, servicing, gas charging and installation for split, inverter and commercial air conditioning — efficient cooling and lower bills.",
+    metaTitle: "AC Repair, Service & Installation in Sri Lanka",
     metaDescription:
-      "Professional AC service, repair, installation and gas charging for split, inverter and commercial air conditioning across Sri Lanka. Fast response from TechNurture technicians.",
+      "Professional AC repair, service, installation and gas charging for split, inverter and commercial air conditioning across Sri Lanka. Fast-response technicians from TechNurture.",
     keywords: [
-      "AC service Sri Lanka",
-      "AC repair Colombo",
-      "air conditioning installation Sri Lanka",
+      "AC repair Sri Lanka",
+      "AC service Colombo",
+      "air conditioner installation Sri Lanka",
       "AC gas charging",
-      "commercial air conditioning service",
+      "inverter AC repair",
     ],
     image: "/services/air-conditioning.png",
     intro: {
@@ -242,15 +193,15 @@ export const serviceCatalog = [
       ],
       highlights: [
         "Split, inverter & commercial AC",
-        "Gas charging & performance checks",
+        "Gas charging & leak checks",
         "Residential & commercial",
         "Emergency repair support",
       ],
     },
     offerings: [
       {
-        title: "Installation",
-        body: "Professional installation and setup of split, inverter and commercial cooling systems.",
+        title: "Repairs & Diagnostics",
+        body: "Fast troubleshooting for weak cooling, water leaks, strange sounds, blocked condensers and faulty components.",
       },
       {
         title: "Servicing & Maintenance",
@@ -261,41 +212,157 @@ export const serviceCatalog = [
         body: "Refrigerant top-up and leak checks to restore cooling capacity and efficiency.",
       },
       {
-        title: "Repairs & Diagnostics",
-        body: "Troubleshooting for weak cooling, strange sounds, blocked condensers and faulty components.",
+        title: "Installation",
+        body: "Professional installation and setup of split, inverter and commercial cooling systems.",
       },
     ],
     steps: [
       { n: "01", title: "Inspect", body: "We evaluate your space, load and existing equipment." },
-      { n: "02", title: "Quote", body: "A clear recommendation and transparent pricing for the right system." },
-      { n: "03", title: "Install / Service", body: "Trained technicians install or service to manufacturer standards." },
+      { n: "02", title: "Quote", body: "A clear recommendation and transparent pricing before any work." },
+      { n: "03", title: "Repair / Service", body: "Trained technicians repair or service to manufacturer standards." },
       { n: "04", title: "Support", body: "Ongoing maintenance keeps cooling efficient and reliable." },
     ],
-    related: ["water-purification", "maintenance-amc"],
+    related: ["refrigerator", "washing-machine", "maintenance-amc"],
+  },
+  {
+    slug: "refrigerator",
+    icon: "fridge",
+    title: "Refrigerator & Freezer",
+    h1: "Refrigerator & Freezer Repair in Sri Lanka",
+    tagline: "Fast fridge and freezer repairs that stop food spoiling.",
+    summary:
+      "Diagnosis and repair of cooling faults, gas refilling, compressor, thermostat and door-seal issues for fridges and freezers of every brand.",
+    metaTitle: "Refrigerator & Freezer Repair in Sri Lanka",
+    metaDescription:
+      "Same-day refrigerator and freezer repair across Sri Lanka — not cooling, gas refilling, compressor, thermostat and door-seal faults on all major brands. Genuine parts, trained technicians from TechNurture.",
+    keywords: [
+      "refrigerator repair Sri Lanka",
+      "fridge repair Colombo",
+      "freezer repair",
+      "fridge gas refilling",
+      "refrigerator compressor repair",
+    ],
+    image: "/services/refrigerator.png",
+    intro: {
+      heading: "Back to cold, before anything spoils.",
+      body: [
+        "We repair domestic and commercial refrigerators, chest and upright freezers, and no-frost units — cooling loss, gas leaks, compressor and PCB faults, noisy operation and water leaks.",
+        "Our technicians service all major brands regardless of who supplied the unit, using genuine parts and the correct refrigerant so the repair lasts.",
+      ],
+      highlights: [
+        "No-cooling & gas refilling",
+        "Compressor & thermostat faults",
+        "Domestic & commercial units",
+        "All major brands",
+      ],
+    },
+    offerings: [
+      {
+        title: "Cooling & Gas Repair",
+        body: "Leak detection, gas refilling and restoring correct cooling in fridges and freezers.",
+      },
+      {
+        title: "Compressor & PCB",
+        body: "Diagnosis and replacement of compressors, relays, thermostats and control boards.",
+      },
+      {
+        title: "Seals & Water Leaks",
+        body: "Door-gasket replacement, drainage and defrost fixes that stop leaks and frost build-up.",
+      },
+      {
+        title: "Commercial Refrigeration",
+        body: "Display chillers, chest freezers and cold-room support for shops and restaurants.",
+      },
+    ],
+    steps: [
+      { n: "01", title: "Diagnose", body: "We identify the fault on-site and explain it plainly." },
+      { n: "02", title: "Quote", body: "Transparent pricing before any work begins." },
+      { n: "03", title: "Repair", body: "Genuine parts and the correct refrigerant, done right." },
+      { n: "04", title: "Verify", body: "We confirm stable cooling before we leave." },
+    ],
+    related: ["air-conditioning", "washing-machine", "maintenance-amc"],
+  },
+  {
+    slug: "washing-machine",
+    icon: "washer",
+    title: "Washing Machine",
+    h1: "Washing Machine Repair in Sri Lanka",
+    tagline: "Repairs for every wash fault — front-load, top-load, automatic.",
+    summary:
+      "Repair of drainage, spin, drum, motor, PCB and water-inlet faults on front-load, top-load and fully-automatic washing machines.",
+    metaTitle: "Washing Machine Repair & Service in Sri Lanka",
+    metaDescription:
+      "Expert washing machine repair across Sri Lanka — not spinning, not draining, error codes, drum, motor, PCB and inlet-valve faults on front-load, top-load and automatic machines. Genuine parts from TechNurture.",
+    keywords: [
+      "washing machine repair Sri Lanka",
+      "washing machine service Colombo",
+      "front load washing machine repair",
+      "washer not spinning repair",
+      "automatic washing machine repair",
+    ],
+    image: "/services/washing-machine.png",
+    intro: {
+      heading: "Laundry back to normal, fast.",
+      body: [
+        "We repair front-load, top-load and fully-automatic washing machines — no spin, no drain, water not filling, excessive vibration, error codes, and drum, bearing, motor and PCB faults.",
+        "All major brands serviced with genuine parts, whether the machine is under a year old or a decade in.",
+      ],
+      highlights: [
+        "Front-load, top-load & automatic",
+        "Drainage & spin faults",
+        "Motor, drum & PCB repair",
+        "All major brands",
+      ],
+    },
+    offerings: [
+      {
+        title: "Drain & Spin Repair",
+        body: "Fixes for machines that won't drain, spin or complete a wash cycle.",
+      },
+      {
+        title: "Motor, Belt & Drum",
+        body: "Bearing, belt, drum and motor repair for noise and heavy vibration issues.",
+      },
+      {
+        title: "Electronics & PCB",
+        body: "Error-code diagnosis, control-board and sensor replacement.",
+      },
+      {
+        title: "Inlet & Leaks",
+        body: "Water-inlet valve, hose and seal repairs that stop leaks for good.",
+      },
+    ],
+    steps: [
+      { n: "01", title: "Diagnose", body: "We pinpoint the fault on-site and explain it clearly." },
+      { n: "02", title: "Quote", body: "Transparent pricing before any repair begins." },
+      { n: "03", title: "Repair", body: "Genuine parts fitted by trained technicians." },
+      { n: "04", title: "Verify", body: "We run a full cycle to confirm the fix before we leave." },
+    ],
+    related: ["air-conditioning", "refrigerator", "maintenance-amc"],
   },
   {
     slug: "maintenance-amc",
-    icon: "shield",
+    icon: "wrench",
     title: "Maintenance & AMC",
-    h1: "Annual Maintenance Contracts (AMC) in Sri Lanka",
-    tagline: "Preventive care that turns surprise repairs into peace of mind.",
+    h1: "Home Appliance Maintenance & AMC in Sri Lanka",
+    tagline: "Preventive care that turns surprise breakdowns into peace of mind.",
     summary:
-      "Scheduled preventive maintenance and Annual Maintenance Contracts that reduce breakdowns, extend equipment life and cut long-term costs.",
-    metaTitle: "Annual Maintenance Contract (AMC) Plans in Sri Lanka",
+      "Scheduled preventive maintenance and Annual Maintenance Contracts for air conditioners, refrigerators and washing machines.",
+    metaTitle: "Appliance Annual Maintenance Contract (AMC) in Sri Lanka",
     metaDescription:
-      "Comprehensive and non-comprehensive annual maintenance contracts (AMC) for water purifiers and air conditioning in Sri Lanka. Scheduled preventive visits, priority support and lower long-term costs.",
+      "Comprehensive and non-comprehensive AMC plans for air conditioners, refrigerators and washing machines in Sri Lanka. Scheduled preventive visits, priority support and lower long-term costs from TechNurture.",
     keywords: [
+      "appliance AMC Sri Lanka",
       "annual maintenance contract Sri Lanka",
-      "AMC plans water purifier",
-      "AMC air conditioning",
-      "preventive maintenance services",
-      "equipment maintenance contract",
+      "AC AMC plan",
+      "home appliance maintenance",
+      "preventive maintenance service",
     ],
     image: "/services/maintenance-amc.png",
     intro: {
       heading: "The cheapest repair is the one you never need.",
       body: [
-        "Preventive maintenance is the key to maximizing performance, reducing downtime and extending the life of your equipment. Our Annual Maintenance Contracts make that preventive care automatic — with scheduled visits, servicing and priority support built in.",
+        "Preventive maintenance is the key to maximizing performance, reducing downtime and extending the life of your appliances. Our Annual Maintenance Contracts make that preventive care automatic — with scheduled visits, servicing and priority support built in for your air conditioners, refrigerators and washing machines.",
         "Choose the coverage that fits: a fully-inclusive Comprehensive AMC, an economical Non-Comprehensive plan, or flexible On-Call service only when you need it.",
       ],
       highlights: [
@@ -324,12 +391,12 @@ export const serviceCatalog = [
       },
     ],
     steps: [
-      { n: "01", title: "Review", body: "We assess your equipment and how critical uptime is for you." },
+      { n: "01", title: "Review", body: "We assess your appliances and how critical uptime is for you." },
       { n: "02", title: "Choose a plan", body: "Comprehensive, non-comprehensive or on-call — you decide the coverage." },
       { n: "03", title: "Schedule", body: "Preventive visits are planned in advance so you never think about it." },
-      { n: "04", title: "Relax", body: "Fewer breakdowns, longer equipment life and predictable costs." },
+      { n: "04", title: "Relax", body: "Fewer breakdowns, longer appliance life and predictable costs." },
     ],
-    related: ["water-purification", "air-conditioning"],
+    related: ["air-conditioning", "refrigerator", "washing-machine"],
   },
 ];
 
@@ -341,11 +408,11 @@ export const whyChoose = {
   eyebrow: "Why TechNurture",
   heading: "Reasons customers trust us",
   cards: [
-    { title: "Experienced Technical Team", body: "Qualified technicians with extensive hands-on experience across water and cooling systems." },
+    { title: "Experienced Technical Team", body: "Qualified technicians with extensive hands-on experience across air conditioning, refrigeration and laundry appliances." },
     { title: "Fast Response", body: "Prompt support to minimize downtime and inconvenience for homes and businesses." },
     { title: "Preventive Maintenance", body: "Scheduled inspections that prevent costly, unexpected breakdowns before they happen." },
     { title: "Island-Wide Coverage", body: "Professional service wherever your home or business operates across Sri Lanka." },
-    { title: "Genuine Parts", body: "Quality components and consumables for maximum reliability and performance." },
+    { title: "Genuine Parts", body: "Quality components and spare parts for maximum reliability and performance." },
     { title: "Long-Term Partnership", body: "We measure success through retention and lasting customer relationships." },
   ],
 };
@@ -355,98 +422,21 @@ export const process = {
   heading: "A simple, transparent service journey",
   steps: [
     { n: "01", title: "Contact our team", body: "Reach us by phone, WhatsApp or the website inquiry form to tell us what you need." },
-    { n: "02", title: "Site inspection", body: "We assess your requirements, water quality and space on-site or remotely." },
+    { n: "02", title: "On-site diagnosis", body: "We assess your appliance and the fault on-site or remotely, and explain it plainly." },
     { n: "03", title: "Customized quotation", body: "Receive a clear, tailored solution and transparent pricing — no surprises." },
-    { n: "04", title: "Professional installation", body: "Trained technicians install or service your system to manufacturer standards." },
-    { n: "05", title: "Ongoing support", body: "Preventive maintenance and responsive support throughout the life of your equipment." },
+    { n: "04", title: "Professional repair", body: "Trained technicians repair or service your appliance with genuine parts." },
+    { n: "05", title: "Ongoing support", body: "Preventive maintenance and responsive support throughout the life of your appliance." },
   ],
 };
 
-export const productCategories = [
-  {
-    slug: "water-purifiers",
-    title: "Water Purifiers",
-    intro:
-      "A range of domestic and commercial water purification systems designed to provide safe, clean, high-quality drinking water.",
-    items: [
-      "Domestic Water Purifiers",
-      "Commercial Water Purifiers",
-      "Reverse Osmosis (RO) Systems",
-      "UV Water Purification Systems",
-      "Multi-Stage Filtration Systems",
-      "Customized Water Treatment Solutions",
-    ],
-  },
-  {
-    slug: "air-conditioning",
-    title: "Air Conditioning Systems",
-    intro:
-      "Energy-efficient air conditioning solutions for residential, commercial and industrial applications.",
-    items: [
-      "Split Air Conditioners",
-      "Inverter Air Conditioners",
-      "Commercial Air Conditioning Systems",
-      "Office Cooling Solutions",
-      "Customized Cooling Systems",
-    ],
-  },
-  {
-    slug: "filters-consumables",
-    title: "Genuine Filters & Consumables",
-    intro:
-      "Regular filter replacement is essential to maintain water quality, system efficiency and equipment lifespan.",
-    items: [
-      "Sediment Filters",
-      "Carbon Filters",
-      "RO Membranes",
-      "UV Lamps",
-      "Mineral Cartridges",
-      "Specialized Filtration Media",
-    ],
-  },
-  {
-    slug: "spare-parts",
-    title: "Spare Parts & Accessories",
-    intro:
-      "A wide range of quality spare parts and replacement components to ensure fast repairs and minimal downtime.",
-    items: [
-      "Water Purifier Pumps",
-      "Pressure Switches",
-      "Solenoid Valves",
-      "Storage Tanks",
-      "AC Capacitors & Fan Motors",
-      "Sensors & Refrigeration Components",
-    ],
-  },
-];
-
-/* ---- Shop: real Lusako catalogue lives in lib/products.ts ---- */
-
-/* ---- Blog: 5 posts (titles from the brief's SEO content list) ---- */
+/* ---- Blog: 5 posts, balanced across the service pillars ---- */
 export const posts = [
   {
-    slug: "how-often-should-a-water-purifier-be-serviced",
-    title: "How Often Should a Water Purifier Be Serviced?",
-    excerpt:
-      "Service intervals, the warning signs to watch for, and how the right maintenance schedule protects your drinking water and your investment.",
-    date: "2026-06-12",
-    readTime: "5 min read",
-    category: "Water Purification",
-    image: "/blog/water-purifier-service.png",
-    body: [
-      "We recommend servicing your water purifier every 4 to 6 months, depending on water quality, usage and manufacturer recommendations. Regular maintenance ensures optimal performance and consistently safe drinking water.",
-      "Common signs that your purifier needs attention include reduced water flow, an unusual taste or odour, leakage, unusual operating sounds, filter-replacement indicators lighting up, or a general drop in water quality. Any one of these is worth a quick inspection.",
-      "During a service, genuine, high-quality filters and consumables are replaced to maintain efficiency and extend the life of your system. Sediment filters, carbon filters, RO membranes and UV lamps each have their own replacement rhythm.",
-      "Our experienced technicians can inspect, repair and maintain most major brands and models — regardless of who originally installed the system. We can also arrange water-quality testing so you have hard data behind every recommendation.",
-      "The simplest way to never miss a service is an Annual Maintenance Contract: scheduled inspections, filter replacements and priority technical support, all planned in advance so you never think about it.",
-    ],
-  },
-  {
-    slug: "signs-your-air-conditioner-needs-maintenance",
-    title: "Signs Your Air Conditioner Needs Maintenance",
+    slug: "signs-your-air-conditioner-needs-repair",
+    title: "Signs Your Air Conditioner Needs Repair",
     excerpt:
       "Weak cooling, rising bills and strange sounds are your AC asking for help. Here's how to read the signals before a breakdown.",
-    date: "2026-06-12",
+    date: "2026-07-10",
     readTime: "4 min read",
     category: "Air Conditioning",
     image: "/blog/ac-unit-maintenance.png",
@@ -458,61 +448,83 @@ export const posts = [
     ],
   },
   {
-    slug: "benefits-of-annual-maintenance-contracts",
-    title: "The Benefits of Annual Maintenance Contracts",
+    slug: "why-your-refrigerator-stops-cooling",
+    title: "Why Your Refrigerator Stops Cooling (and How to Fix It)",
     excerpt:
-      "An AMC turns unpredictable repair bills into a planned, predictable cost — while keeping your equipment healthier for longer.",
-    date: "2026-06-12",
+      "A fridge that won't cool is a race against spoiling food. Here are the common causes — and when to call a technician.",
+    date: "2026-07-04",
+    readTime: "5 min read",
+    category: "Refrigerator",
+    image: "/blog/refrigerator-repair.png",
+    body: [
+      "When a refrigerator stops cooling, the most common causes are a gas (refrigerant) leak, a failing compressor, a faulty thermostat or a blocked defrost system. Each has different symptoms, so an accurate on-site diagnosis matters.",
+      "Start with the easy checks: confirm the unit has power, the door seals fully, and the vents inside aren't blocked by food. If the freezer works but the fridge section is warm, the problem is often airflow or the defrost system rather than the compressor.",
+      "A leaking refrigerant circuit or a burnt-out compressor needs a qualified technician — refrigerant handling and compressor replacement are not DIY jobs. We locate the leak, repair it, refill with the correct gas and verify stable cooling before we leave.",
+      "Our technicians service domestic and commercial refrigerators and freezers of all major brands, using genuine parts. If a repair isn't worthwhile, we'll tell you honestly rather than sell you an unnecessary fix.",
+      "The best protection against a mid-week breakdown is preventive care — an Annual Maintenance Contract keeps seals, gas levels and cooling performance in check all year round.",
+    ],
+  },
+  {
+    slug: "washing-machine-not-spinning-or-draining",
+    title: "Washing Machine Not Spinning or Draining? Here's Why",
+    excerpt:
+      "No spin, no drain, or water left in the drum — the usual culprits behind the most common washing-machine faults.",
+    date: "2026-06-26",
+    readTime: "5 min read",
+    category: "Washing Machine",
+    image: "/blog/washing-machine-repair.png",
+    body: [
+      "If your washing machine won't spin or drain, the water left in the drum usually points to a blocked drain pump, a clogged filter, a kinked drain hose or a worn drive belt. On automatic machines, a faulty door lock or control board can also stop the cycle.",
+      "Before calling for service, check the drain filter (usually behind a small panel at the front) and make sure the drain hose isn't blocked or pushed too far into the standpipe. Clearing lint and debris solves a surprising number of 'won't drain' cases.",
+      "Persistent no-spin faults are often the motor carbon brushes, the drive belt, the door-lock switch or the main PCB. Loud banging on spin usually means worn drum bearings — a bigger job best handled by a technician before it damages the drum.",
+      "We repair front-load, top-load and fully-automatic washing machines of all major brands, diagnose error codes, and fit genuine parts. Every repair is tested with a full cycle so you know it's truly fixed.",
+    ],
+  },
+  {
+    slug: "benefits-of-an-appliance-amc",
+    title: "The Benefits of an Appliance Annual Maintenance Contract",
+    excerpt:
+      "An AMC turns unpredictable repair bills into a planned, predictable cost — while keeping your appliances healthier for longer.",
+    date: "2026-06-18",
     readTime: "6 min read",
     category: "Maintenance",
     image: "/blog/amc-benefits.png",
     body: [
-      "Preventive maintenance is the key to maximizing equipment performance, reducing downtime and extending asset lifespan. An Annual Maintenance Contract (AMC) makes that preventive care automatic.",
+      "Preventive maintenance is the key to maximizing appliance performance, reducing downtime and extending asset lifespan. An Annual Maintenance Contract (AMC) makes that preventive care automatic for your air conditioners, refrigerators and washing machines.",
       "A Comprehensive AMC is our most complete solution — scheduled preventive visits, routine servicing, labour, eligible spare-part replacement, breakdown support and priority technical assistance, all for one predictable annual cost.",
       "A Non-Comprehensive AMC is the economical option: professional servicing, inspections, labour and technical support, with replacement parts charged separately as needed.",
       "Prefer to pay only when something happens? On-Call Service gives you service visits on request, breakdown troubleshooting and inspections without a contract.",
-      "Whichever you choose, the benefits are the same: fewer breakdowns, longer equipment life, lower long-term repair costs, better efficiency and priority support — in short, peace of mind.",
+      "Whichever you choose, the benefits are the same: fewer breakdowns, longer appliance life, lower long-term repair costs, better efficiency and priority support — in short, peace of mind.",
     ],
   },
   {
-    slug: "how-to-improve-indoor-air-quality",
-    title: "How to Improve Indoor Air Quality",
+    slug: "extend-the-life-of-your-home-appliances",
+    title: "7 Habits That Extend the Life of Your Home Appliances",
     excerpt:
-      "Cleaner indoor air is part filtration, part airflow and part maintenance. A practical guide for homes and workplaces.",
-    date: "2026-06-12",
-    readTime: "5 min read",
-    category: "Air Conditioning",
-    image: "/blog/indoor-air-quality.png",
-    body: [
-      "Indoor air quality has a direct effect on comfort, focus and health. Much of it comes down to how well your air conditioning and ventilation systems are maintained.",
-      "Start with the filters. Dirty AC filters restrict airflow and recirculate dust — cleaning or replacing them on schedule is the single highest-impact thing most people skip.",
-      "Good airflow matters as much as filtration. Blocked condensers and poorly balanced systems leave stale pockets of air; a professional service rebalances and clears them.",
-      "Pair well-maintained cooling with clean, purified water and you've covered the two essentials of a healthy indoor environment — which is exactly where a combined water-and-air service partner earns its keep.",
-    ],
-  },
-  {
-    slug: "why-preventive-maintenance-saves-money",
-    title: "Why Preventive Maintenance Saves Money",
-    excerpt:
-      "The cheapest repair is the one you never need. Here's the simple economics behind preventive maintenance.",
-    date: "2026-06-12",
+      "Small routines that keep your AC, fridge and washing machine running longer — and out of the repair queue.",
+    date: "2026-06-10",
     readTime: "4 min read",
     category: "Maintenance",
     image: "/blog/preventive-maintenance-savings.png",
     body: [
-      "It's tempting to wait until something breaks. But reactive repairs are almost always more expensive, more disruptive and more urgent than planned maintenance — and they tend to arrive at the worst possible time.",
-      "Preventive maintenance reduces unexpected breakdowns, extends equipment lifespan, improves operating efficiency and lowers long-term repair costs. For water and cooling systems it also protects water quality and cooling performance.",
-      "There's a reliability dividend too: standardized procedures, trained technicians and continuous performance monitoring mean small issues are caught while they're still small and cheap.",
-      "Across a fleet of systems — in a hospital, a bank branch network or a manufacturing facility — those savings compound quickly. That's why our customers measure value not at the point of purchase, but across years of dependable operation.",
+      "Most appliance failures are gradual, not sudden — which means a few simple habits can add years to the life of your AC, refrigerator and washing machine, and keep them running efficiently.",
+      "Clean or replace filters on schedule. AC filters restrict airflow when clogged, forcing the system to work harder; washing-machine drain filters cause drainage faults when neglected. This is the single highest-impact habit most people skip.",
+      "Give appliances room to breathe. Leave a gap behind the fridge for the condenser to release heat, keep the AC condenser unit clear of leaves and dust, and don't overload the washing machine drum.",
+      "Watch for early warning signs — weak cooling, unusual sounds, longer cycles, rising bills or small leaks. Catching a small fault early is almost always cheaper than waiting for a full breakdown.",
+      "Finally, book a periodic professional service. Reactive repairs are almost always more expensive, more disruptive and more urgent than planned maintenance — which is exactly what an Annual Maintenance Contract is designed to prevent.",
     ],
   },
 ];
 
-/* ---- FAQ (condensed from the brief) ---- */
+/* ---- FAQ ---- */
 export const faqs = [
   {
-    q: "How often should a water purifier be serviced?",
-    a: "Every 4 to 6 months depending on water quality, usage and manufacturer recommendations. Regular maintenance ensures optimal performance and safe drinking water.",
+    q: "How often should home appliances be serviced?",
+    a: "As a guide: air conditioners every 3–6 months, refrigerators once a year, and washing machines whenever performance drops. Regular maintenance keeps appliances efficient and prevents breakdowns.",
+  },
+  {
+    q: "Which appliance brands do you repair?",
+    a: "We repair all major brands of air conditioners, refrigerators, freezers and washing machines — regardless of who originally supplied or installed the unit.",
   },
   {
     q: "Can you service equipment installed by another company?",
@@ -520,7 +532,7 @@ export const faqs = [
   },
   {
     q: "Do you provide island-wide service coverage?",
-    a: "Yes. We provide installation, maintenance and technical support services across Sri Lanka.",
+    a: "Yes. We provide repair, maintenance and technical support services across Sri Lanka.",
   },
   {
     q: "What are your maintenance contract options?",
@@ -543,7 +555,7 @@ export const trustCards = [
   },
   {
     title: "Long-Term Support",
-    body: "Professional installation is just the beginning. We provide ongoing maintenance, preventive care and responsive technical support for the life of your equipment.",
+    body: "A one-time repair is just the beginning. We provide ongoing maintenance, preventive care and responsive technical support for the life of your appliances.",
   },
   {
     title: "Reliable Service Delivery",
@@ -553,8 +565,8 @@ export const trustCards = [
 
 export const servicePlans = {
   eyebrow: "AMC & Service Plans",
-  heading: "Tailored care for your water & cooling systems",
-  sub: "Keep your systems performing at their best with our flexible Annual Maintenance Contracts (AMC) and on-demand services.",
+  heading: "Tailored care for your home appliances",
+  sub: "Keep your air conditioners, refrigerators and washing machines performing at their best with our flexible Annual Maintenance Contracts (AMC) and on-demand services.",
   plans: [
     {
       id: "comprehensive",
@@ -607,4 +619,3 @@ export const servicePlans = {
 export function whatsappLink(message: string) {
   return `https://wa.me/${site.whatsapp}?text=${encodeURIComponent(message)}`;
 }
-

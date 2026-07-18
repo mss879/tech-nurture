@@ -11,14 +11,14 @@ export default function Statement() {
         <WordReveal
           className="display text-3xl leading-[1.15] text-mist sm:text-5xl sm:leading-[1.12]"
           highlight={[
-            "water",
-            "purification",
             "air",
-            "conditioning",
+            "conditioning,",
+            "refrigeration",
+            "laundry",
             "trust",
             "confidence",
           ]}
-          text="We combine over a decade of technical expertise with a customer-first approach to deliver reliable water purification and air conditioning that homes, businesses and institutions can trust today and depend on tomorrow."
+          text="We combine over a decade of technical expertise with a customer-first approach to deliver reliable air conditioning, refrigeration and laundry appliance repairs that homes, businesses and institutions can trust today and depend on tomorrow."
         />
       </div>
     </section>

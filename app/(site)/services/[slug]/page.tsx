@@ -2,15 +2,16 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import { Droplets, Wind, ShieldCheck, Check, ArrowUpRight, ArrowRight } from "lucide-react";
+import { AirVent, Refrigerator, WashingMachine, Wrench, Check, ArrowUpRight, ArrowRight } from "lucide-react";
 import PageHero from "@/components/layout/PageHero";
 import Reveal from "@/components/ui/Reveal";
 import { serviceCatalog, getService, site, whatsappLink } from "@/lib/site";
 
 const iconMap: Record<string, React.ElementType> = {
-  droplet: Droplets,
-  wind: Wind,
-  shield: ShieldCheck,
+  air: AirVent,
+  fridge: Refrigerator,
+  washer: WashingMachine,
+  wrench: Wrench,
 };
 
 export function generateStaticParams() {
@@ -48,7 +49,7 @@ export default async function ServicePage({
   const service = getService(slug);
   if (!service) notFound();
 
-  const Icon = iconMap[service.icon] ?? Droplets;
+  const Icon = iconMap[service.icon] ?? Wrench;
   const related = service.related
     .map((r) => getService(r))
     .filter(Boolean) as NonNullable<ReturnType<typeof getService>>[];
@@ -180,7 +181,7 @@ export default async function ServicePage({
 
           <div className="mt-10 grid gap-5 sm:grid-cols-2">
             {related.map((r, i) => {
-              const RIcon = iconMap[r.icon] ?? Droplets;
+              const RIcon = iconMap[r.icon] ?? Wrench;
               return (
                 <Reveal key={r.slug} delay={i * 0.06} as="div">
                   <Link

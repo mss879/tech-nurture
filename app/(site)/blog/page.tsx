@@ -9,7 +9,7 @@ import { posts } from "@/lib/site";
 export const metadata: Metadata = {
   title: "Blog",
   description:
-    "Insights and practical guides on water purification, air conditioning and preventive maintenance from the TechNurture team.",
+    "Practical guides on air conditioning, refrigerator and washing machine repair, plus preventive maintenance, from the TechNurture team.",
   alternates: { canonical: "/blog" },
 };
 

@@ -5,12 +5,11 @@ import { Send, CheckCircle2, Loader2 } from "lucide-react";
 import { whatsappLink } from "@/lib/site";
 
 const serviceOptions = [
-  "Water Purifier — Installation",
-  "Water Purifier — Service / Repair",
+  "Air Conditioning — Repair / Service",
   "Air Conditioning — Installation",
-  "Air Conditioning — Service / Repair",
+  "Refrigerator / Freezer — Repair",
+  "Washing Machine — Repair",
   "Annual Maintenance Contract (AMC)",
-  "Spare Parts / Filters",
   "Other",
 ];
 
@@ -200,7 +199,7 @@ Details: ${form.message || "—"}`;
           rows={4}
           value={form.message}
           onChange={(e) => update("message", e.target.value)}
-          placeholder="e.g. RO purifier service for an office in Colombo…"
+          placeholder="e.g. Split AC not cooling in an office in Colombo…"
           className={`${field} resize-none`}
         />
       </div>

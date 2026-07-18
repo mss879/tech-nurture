@@ -19,7 +19,7 @@ export default function Preloader() {
 
     // Preload video in the background
     const videoReq = new XMLHttpRequest();
-    videoReq.open("GET", "/3D_particle_field_animation_wave…_202607020045.mp4", true);
+    videoReq.open("GET", "/hero-particles.mp4", true);
     videoReq.responseType = "blob";
     videoReq.send();
 
@@ -309,7 +309,7 @@ export default function Preloader() {
       {/* Welcome Display Text */}
       <div className="h-28 flex flex-col items-center justify-center pointer-events-none select-none z-10">
         <span className="eyebrow text-lime/50 mb-3 tracking-[0.25em] text-[10px] sm:text-xs">
-          TECH NATURE
+          TECH NURTURE
         </span>
         <h2
           ref={textRef}

@@ -24,6 +24,20 @@ export default function LiquidBackground({
       "(prefers-reduced-motion: reduce)"
     ).matches;
 
+    // On phones / low-power devices, skip the WebGL shader entirely and paint
+    // a static brand gradient instead — saves GPU and battery, avoids jank.
+    const nav = navigator as Navigator & { deviceMemory?: number };
+    const lowPower =
+      window.matchMedia("(max-width: 767px)").matches ||
+      (typeof nav.hardwareConcurrency === "number" &&
+        nav.hardwareConcurrency <= 4) ||
+      (typeof nav.deviceMemory === "number" && nav.deviceMemory <= 4);
+    if (lowPower) {
+      el.style.background =
+        "linear-gradient(135deg, #052f43 0%, #0b5b66 55%, #0a1410 100%)";
+      return;
+    }
+
     const renderer = new Renderer({
       alpha: true,
       antialias: true,
@@ -164,6 +178,7 @@ export default function LiquidBackground({
     window.addEventListener("pointermove", onMove);
 
     let raf = 0;
+    let visible = true;
     const t0 = performance.now();
     const loop = () => {
       const now = performance.now();
@@ -173,8 +188,23 @@ export default function LiquidBackground({
       m.x += (target.x - m.x) * 0.05;
       m.y += (target.y - m.y) * 0.05;
       renderer.render({ scene: mesh });
-      if (!reduce) raf = requestAnimationFrame(loop);
+      if (!reduce && visible) {
+        raf = requestAnimationFrame(loop);
+      } else {
+        raf = 0;
+      }
     };
+
+    // Pause the render loop when the backdrop scrolls out of view.
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        visible = entry.isIntersecting;
+        if (visible && !reduce && !raf) raf = requestAnimationFrame(loop);
+      },
+      { threshold: 0 }
+    );
+    io.observe(el);
+
     if (reduce) {
       renderer.render({ scene: mesh });
     } else {
@@ -183,6 +213,7 @@ export default function LiquidBackground({
 
     return () => {
       cancelAnimationFrame(raf);
+      io.disconnect();
       window.removeEventListener("resize", resize);
       window.removeEventListener("pointermove", onMove);
       const ext = gl.getExtension("WEBGL_lose_context");

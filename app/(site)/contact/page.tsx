@@ -8,7 +8,7 @@ import { site, faqs, whatsappLink } from "@/lib/site";
 export const metadata: Metadata = {
   title: "Contact",
   description:
-    "Get a quotation, book a free site inspection or request a maintenance visit. Island-wide water purifier and air conditioning service across Sri Lanka.",
+    "Get a quotation, book a free inspection or request a repair or maintenance visit. Island-wide air conditioning, refrigerator and washing machine service across Sri Lanka.",
   alternates: { canonical: "/contact" },
 };
 
@@ -93,9 +93,7 @@ export default function ContactPage() {
                   <p className="mt-2 text-white/85">{site.address}</p>
                   <div className="mt-5 flex items-center gap-2 text-white/85">
                     <Clock className="size-4" />
-                    <span className="text-sm">
-                      Mon – Sat · 8:30am – 6:00pm
-                    </span>
+                    <span className="text-sm">{site.hours}</span>
                   </div>
                 </div>
               </Reveal>

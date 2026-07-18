@@ -57,7 +57,7 @@ export default function AboutIntro() {
                 Average efficiency gain after a service
               </p>
               <div className="mt-7 flex flex-wrap gap-2">
-                {["RO + UV", "AC Service", "AMC Plans", "Genuine Parts"].map(
+                {["AC Service", "Fridge Repair", "Washer Repair", "AMC Plans"].map(
                   (t) => (
                     <span
                       key={t}
