@@ -23,6 +23,7 @@ In the Supabase dashboard → **SQL Editor**, run each file in
 | `010_dashboard.sql` | Widened `dashboard_stats` view | Dashboard |
 | `011_seed_blog.sql` | **Optional** — seeds the 5 starter posts | Blog |
 | `012_ai_agent.sql` | AI chat log + `ai` lead/booking source | (chat widget) |
+| `013_live_chat.sql` | Chat sessions + human handoff / takeover | Live Chat |
 
 > `010_dashboard.sql` replaces the view created in `004`, so it must run after
 > `005`–`008`. `011` is optional — skip it to start with an empty blog (the
@@ -70,6 +71,21 @@ this same backend, tagged `source = 'ai'`.
 
 Without the key the widget still shows but politely points visitors to phone /
 WhatsApp. Conversations are logged to `ai_messages`.
+
+### Live chat & human takeover (013)
+
+Every conversation is saved and visible under **Live Chat** in the admin. There
+you can watch chats in real time, flip a conversation from **AI → Manual** (which
+switches the bot off), and reply as your team — replies appear in the visitor's
+widget within a few seconds (polling).
+
+When a visitor asks to speak to a person, the AI calls a `request_human` tool
+that flags the conversation. The admin **always** shows this (a red badge on the
+"Live Chat" menu + the conversation highlighted). To *also* get an **email** when
+you're away from the admin, set `RESEND_API_KEY` (+ optionally
+`OWNER_NOTIFICATION_EMAIL` and `RESEND_FROM`) — verify your domain at
+[resend.com/domains](https://resend.com/domains). Email is entirely optional; the
+in-admin badge works without it.
 
 > **Production note:** `/api/chat` is a public endpoint that runs a paid model
 > and can write to the DB. It has a best-effort in-memory rate limit and a

@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   MessageSquare,
+  Headset,
   CalendarCheck,
   KanbanSquare,
   Users,
@@ -19,12 +20,13 @@ import {
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 
 const menu = [
-  { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
-  { label: "Inquiries", href: "/admin/enquiries", icon: MessageSquare },
-  { label: "Services Booking", href: "/admin/bookings", icon: CalendarCheck },
-  { label: "CRM", href: "/admin/crm", icon: KanbanSquare },
-  { label: "Clients", href: "/admin/clients", icon: Users },
-  { label: "Blog", href: "/admin/blog", icon: Newspaper },
+  { label: "Dashboard", href: "/admin", icon: LayoutDashboard, badge: false },
+  { label: "Inquiries", href: "/admin/enquiries", icon: MessageSquare, badge: false },
+  { label: "Live Chat", href: "/admin/chats", icon: Headset, badge: true },
+  { label: "Services Booking", href: "/admin/bookings", icon: CalendarCheck, badge: false },
+  { label: "CRM", href: "/admin/crm", icon: KanbanSquare, badge: false },
+  { label: "Clients", href: "/admin/clients", icon: Users, badge: false },
+  { label: "Blog", href: "/admin/blog", icon: Newspaper, badge: false },
 ];
 
 export default function AdminSidebar() {
@@ -32,6 +34,29 @@ export default function AdminSidebar() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
+  const [pending, setPending] = useState(0);
+
+  // Poll the count of conversations where a visitor asked for a human, so the
+  // owner sees a badge on "Live Chat" from anywhere in the admin.
+  useEffect(() => {
+    let active = true;
+    const check = async () => {
+      try {
+        const res = await fetch("/api/admin/chats?count=pending");
+        if (!res.ok) return;
+        const data = await res.json();
+        if (active && typeof data?.pending === "number") setPending(data.pending);
+      } catch {
+        // ignore
+      }
+    };
+    check();
+    const iv = setInterval(check, 20000);
+    return () => {
+      active = false;
+      clearInterval(iv);
+    };
+  }, []);
 
   const signOut = async () => {
     if (signingOut) return;
@@ -65,6 +90,15 @@ export default function AdminSidebar() {
           >
             <item.icon className="size-4.5" />
             {item.label}
+            {item.badge && pending > 0 && (
+              <span
+                className={`ml-auto grid min-w-5 place-items-center rounded-full px-1.5 py-0.5 text-[0.65rem] font-bold ${
+                  active ? "bg-ink text-lime" : "bg-red-500 text-white"
+                }`}
+              >
+                {pending}
+              </span>
+            )}
           </Link>
         );
       })}

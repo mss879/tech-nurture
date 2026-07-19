@@ -6,7 +6,8 @@ import remarkGfm from "remark-gfm";
 import { MessageCircle, X, Send, Loader2 } from "lucide-react";
 import { whatsappLink } from "@/lib/site";
 
-type Msg = { role: "user" | "assistant"; content: string };
+type Msg = { role: "user" | "assistant" | "agent"; content: string };
+const SID_KEY = "tn_chat_sid";
 
 /* WhatsApp glyph (lucide has no brand icon); inherits currentColor. */
 function WhatsAppIcon({ className }: { className?: string }) {
@@ -37,15 +38,69 @@ export default function ChatWidget() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pastHero, setPastHero] = useState(false);
+  const [mode, setMode] = useState<"ai" | "manual">("ai");
   const sessionId = useRef<string>("");
+  const lastAgentAt = useRef<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const launcherRef = useRef<HTMLButtonElement>(null);
   const nearBottomRef = useRef(true);
 
+  // Persist the session id so a conversation (and any human takeover) survives
+  // page reloads.
   useEffect(() => {
-    sessionId.current = newId();
+    try {
+      let id = localStorage.getItem(SID_KEY);
+      if (!id) {
+        id = newId();
+        localStorage.setItem(SID_KEY, id);
+      }
+      sessionId.current = id;
+    } catch {
+      sessionId.current = newId();
+    }
   }, []);
+
+  // While the panel is open, poll for the team's replies (role 'agent') and
+  // for a switch to manual mode, so a human takeover appears live.
+  useEffect(() => {
+    if (!open) return;
+    let active = true;
+    const poll = async () => {
+      const sid = sessionId.current;
+      if (!sid) return;
+      try {
+        const after = lastAgentAt.current;
+        const res = await fetch(
+          `/api/chat/poll?sessionId=${encodeURIComponent(sid)}${
+            after ? `&after=${encodeURIComponent(after)}` : ""
+          }`
+        );
+        const data = await res.json().catch(() => null);
+        if (!active || !data) return;
+        if (data.mode === "ai" || data.mode === "manual") setMode(data.mode);
+        if (Array.isArray(data.messages) && data.messages.length > 0) {
+          setMessages((m) => [
+            ...m,
+            ...data.messages.map((x: { content: string }) => ({
+              role: "agent" as const,
+              content: x.content,
+            })),
+          ]);
+          lastAgentAt.current =
+            data.messages[data.messages.length - 1].created_at;
+        }
+      } catch {
+        // best-effort
+      }
+    };
+    poll();
+    const iv = setInterval(poll, 5000);
+    return () => {
+      active = false;
+      clearInterval(iv);
+    };
+  }, [open]);
 
   // Reveal the floating buttons once the visitor scrolls past the hero
   // (roughly the first screen). Lenis dispatches native scroll events, so a
@@ -110,10 +165,14 @@ export default function ChatWidget() {
         body: JSON.stringify({ messages: next, sessionId: sessionId.current }),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok || typeof data?.content !== "string") {
+      if (!res.ok) {
         throw new Error(data?.error || "Something went wrong.");
       }
-      setMessages((m) => [...m, { role: "assistant", content: data.content }]);
+      if (data.mode === "ai" || data.mode === "manual") setMode(data.mode);
+      // In manual mode the reply comes from a human via polling (content null).
+      if (typeof data.content === "string" && data.content) {
+        setMessages((m) => [...m, { role: "assistant", content: data.content }]);
+      }
     } catch {
       // roll back the optimistic user message and give the text back
       setMessages((m) => m.slice(0, -1));
@@ -200,32 +259,46 @@ export default function ChatWidget() {
             onScroll={onMessagesScroll}
             className="flex-1 space-y-3 overflow-y-auto bg-slate-50 px-4 py-4"
           >
-            {messages.map((m, i) => (
-              <div
-                key={i}
-                className={`flex ${
-                  m.role === "user" ? "justify-end" : "justify-start"
-                }`}
-              >
-                <div
-                  className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed ${
-                    m.role === "user"
-                      ? "rounded-br-sm bg-green text-white"
-                      : "rounded-bl-sm border border-slate-200 bg-white text-slate-700"
-                  }`}
-                >
-                  {m.role === "assistant" ? (
-                    <div className="[&_a]:font-medium [&_a]:text-green [&_a]:underline [&_li]:my-0.5 [&_ol]:my-1 [&_ol]:list-decimal [&_ol]:pl-4 [&_p]:mb-2 [&_p:last-child]:mb-0 [&_strong]:font-semibold [&_ul]:my-1 [&_ul]:list-disc [&_ul]:pl-4">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                        {m.content}
-                      </ReactMarkdown>
-                    </div>
-                  ) : (
-                    <p className="whitespace-pre-wrap">{m.content}</p>
-                  )}
-                </div>
+            {mode === "manual" && (
+              <div className="mx-auto w-fit rounded-full bg-teal-50 px-3 py-1 text-center text-[0.7rem] font-medium text-teal-700">
+                You&apos;re chatting with the TechNurture team
               </div>
-            ))}
+            )}
+            {messages.map((m, i) => {
+              const isUser = m.role === "user";
+              const isAgent = m.role === "agent";
+              return (
+                <div
+                  key={i}
+                  className={`flex ${isUser ? "justify-end" : "justify-start"}`}
+                >
+                  <div
+                    className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed ${
+                      isUser
+                        ? "rounded-br-sm bg-green text-white"
+                        : isAgent
+                          ? "rounded-bl-sm border border-teal-200 bg-teal-50 text-slate-700"
+                          : "rounded-bl-sm border border-slate-200 bg-white text-slate-700"
+                    }`}
+                  >
+                    {isAgent && (
+                      <p className="mb-0.5 text-[0.62rem] font-semibold uppercase tracking-wide text-teal-600">
+                        TechNurture team
+                      </p>
+                    )}
+                    {m.role === "assistant" ? (
+                      <div className="[&_a]:font-medium [&_a]:text-green [&_a]:underline [&_li]:my-0.5 [&_ol]:my-1 [&_ol]:list-decimal [&_ol]:pl-4 [&_p]:mb-2 [&_p:last-child]:mb-0 [&_strong]:font-semibold [&_ul]:my-1 [&_ul]:list-disc [&_ul]:pl-4">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                          {m.content}
+                        </ReactMarkdown>
+                      </div>
+                    ) : (
+                      <p className="whitespace-pre-wrap">{m.content}</p>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
             {loading && (
               <div className="flex justify-start">
                 <div className="flex gap-1 rounded-2xl rounded-bl-sm border border-slate-200 bg-white px-4 py-3">

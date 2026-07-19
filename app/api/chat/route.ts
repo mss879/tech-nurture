@@ -1,6 +1,7 @@
 import { openai } from "@ai-sdk/openai";
 import { generateText, tool, stepCountIs } from "ai";
 import { z } from "zod";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { getServerSupabase } from "@/lib/supabase/server";
 import { SYSTEM_PROMPT, GREETING } from "@/lib/ai/context";
 import { site, bookingServices, bookingTimeSlots, districts } from "@/lib/site";
@@ -12,6 +13,9 @@ const MAX_MESSAGES = 20;
 const MAX_CHARS = 4000;
 const MAX_SESSION_ID = 128;
 const MAX_INSERTS_PER_REQUEST = 1; // one booking OR one lead per message
+
+const NOT_CONFIGURED_REPLY = `I'm just being set up right now — please call us on **${site.phone}** or [WhatsApp us](https://wa.me/${site.whatsapp}) and our team will help you straight away.`;
+const ERROR_REPLY = `Sorry, I hit a snag. Please call us on **${site.phone}** or [WhatsApp us](https://wa.me/${site.whatsapp}) and we'll help right away.`;
 
 /* Best-effort in-memory rate limit. Bounds abuse of this public,
    unauthenticated endpoint (which runs a paid OpenAI call and can write
@@ -42,16 +46,91 @@ function matchOption(value: string, options: readonly string[]): string | null {
   return options.find((o) => o.toLowerCase() === v) ?? null;
 }
 
-/* Fire-and-forget conversation logging (service-role, never blocks the reply). */
-function logMessage(sessionId: string, role: "user" | "assistant", content: string) {
-  const supabase = getServerSupabase();
-  if (!supabase) return;
+/* Fire-and-forget transcript logging (service-role, never blocks the reply). */
+function logMessage(
+  supabase: SupabaseClient,
+  sessionId: string,
+  role: "user" | "assistant",
+  content: string
+) {
   supabase
     .from("ai_messages")
     .insert({ session_id: sessionId, role, content })
     .then(({ error }) => {
       if (error) console.error("ai_messages insert failed:", error.message);
     });
+}
+
+/* Ensure a chat_sessions row exists and bump its activity; returns the mode. */
+async function upsertSession(supabase: SupabaseClient, sessionId: string) {
+  const { data, error } = await supabase
+    .from("chat_sessions")
+    .upsert(
+      { session_id: sessionId, last_message_at: new Date().toISOString() },
+      { onConflict: "session_id" }
+    )
+    .select("mode, status")
+    .single();
+  if (error) {
+    console.error("chat session upsert failed:", error.message);
+    return { mode: "ai", status: "open" };
+  }
+  return data ?? { mode: "ai", status: "open" };
+}
+
+/* Notify the owner that a visitor asked for a human. In-admin the handoff is
+   always flagged; this optional email pings the owner when they're away. No-op
+   unless RESEND_API_KEY (+ a recipient) is configured. */
+function escapeHtml(s: string): string {
+  return s.replace(
+    /[&<>"']/g,
+    (c) =>
+      ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;",
+      })[c] as string
+  );
+}
+
+async function notifyOwnerHandoff(
+  sessionId: string,
+  info: { reason?: string; name?: string; phone?: string }
+) {
+  const key = process.env.RESEND_API_KEY;
+  const to = process.env.OWNER_NOTIFICATION_EMAIL || site.email;
+  if (!key || !to) return;
+  const from = process.env.RESEND_FROM || `TechNurture <noreply@${site.domain}>`;
+  const link = `https://${site.domain}/admin/chats?id=${encodeURIComponent(sessionId)}`;
+  // Visitor-supplied values — escape before putting them in HTML.
+  const rows = [
+    info.name && `Name: ${escapeHtml(info.name)}`,
+    info.phone && `Phone: ${escapeHtml(info.phone)}`,
+    info.reason && `Reason: ${escapeHtml(info.reason)}`,
+  ]
+    .filter(Boolean)
+    .join("<br>");
+  try {
+    await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${key}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from,
+        to,
+        subject: "A website visitor wants to talk — TechNurture",
+        html: `<p>A visitor on the TechNurture website chat has asked to speak with a person.</p>${
+          rows ? `<p>${rows}</p>` : ""
+        }<p><a href="${link}">Open the conversation in the admin →</a></p>`,
+      }),
+    });
+  } catch (e) {
+    console.error("handoff email failed:", e);
+  }
 }
 
 /* A real calendar date (rejects 2026-02-30) that isn't in the past,
@@ -74,16 +153,7 @@ function isValidFutureDate(value: string): boolean {
   return date.getTime() >= todayLK;
 }
 
-const fallback = (content: string) => Response.json({ content });
-
 export async function POST(request: Request) {
-  // No AI key yet → degrade gracefully instead of erroring.
-  if (!process.env.OPENAI_API_KEY) {
-    return fallback(
-      `I'm just being set up right now — please call us on **${site.phone}** or [WhatsApp us](https://wa.me/${site.whatsapp}) and our team will help you straight away.`
-    );
-  }
-
   const body = await request.json().catch(() => null);
   const sessionId =
     typeof body?.sessionId === "string" && body.sessionId
@@ -94,34 +164,60 @@ export async function POST(request: Request) {
   const ip =
     request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
   if (rateLimited(`${ip}:${sessionId}`)) {
-    return fallback(
-      "You're sending messages a little too fast — please wait a few seconds and try again."
-    );
+    return Response.json({
+      mode: "ai",
+      content:
+        "You're sending messages a little too fast — please wait a few seconds and try again.",
+    });
   }
 
+  // Accept user/assistant/agent history; the human 'agent' turns are shown to
+  // the model as assistant turns for context.
   const messages = (Array.isArray(body?.messages) ? body.messages : [])
     .slice(-100)
     .filter(
       (m: unknown): m is { role: string; content: string } =>
         !!m &&
         typeof m === "object" &&
-        (("role" in m && (m.role === "user" || m.role === "assistant")) as boolean) &&
+        "role" in m &&
+        (m.role === "user" || m.role === "assistant" || m.role === "agent") &&
         "content" in m &&
         typeof (m as { content: unknown }).content === "string"
     )
     .slice(-MAX_MESSAGES)
     .map((m: { role: string; content: string }) => ({
-      role: m.role as "user" | "assistant",
+      role: (m.role === "user" ? "user" : "assistant") as "user" | "assistant",
       content: m.content.slice(0, MAX_CHARS),
     }));
 
-  if (messages.length === 0) return fallback(GREETING);
+  if (messages.length === 0)
+    return Response.json({ mode: "ai", content: GREETING });
+
+  const supabase = getServerSupabase();
+
+  // Without Supabase we can't persist or check mode — degrade gracefully.
+  if (!supabase) return Response.json({ mode: "ai", content: NOT_CONFIGURED_REPLY });
 
   const lastUser = [...messages].reverse().find((m) => m.role === "user");
-  if (lastUser) logMessage(sessionId, "user", lastUser.content);
 
-  // A single request may create at most one booking or one lead — stops the
-  // model (or a crafted message) from emitting many inserts in one call.
+  // Record the session + the incoming message, and read the current mode.
+  const session = await upsertSession(supabase, sessionId);
+  if (lastUser) logMessage(supabase, sessionId, "user", lastUser.content);
+
+  // Manual mode → a human is handling this chat; don't run the AI. The widget
+  // will show the team's replies via polling.
+  if (session.mode === "manual" || session.status === "closed") {
+    return Response.json({ mode: session.mode, content: null });
+  }
+
+  // AI mode but no key yet → graceful reply. The message is still saved, so a
+  // human can pick it up from the admin.
+  if (!process.env.OPENAI_API_KEY) {
+    logMessage(supabase, sessionId, "assistant", NOT_CONFIGURED_REPLY);
+    return Response.json({ mode: "ai", content: NOT_CONFIGURED_REPLY });
+  }
+
+  // A single request may create at most one booking or one lead.
   let insertsThisRequest = 0;
 
   try {
@@ -129,7 +225,6 @@ export async function POST(request: Request) {
       model: openai("gpt-4o-mini"),
       system: SYSTEM_PROMPT,
       messages,
-      // 1 model call + tool exec + follow-up reply (with headroom).
       stopWhen: stepCountIs(5),
       tools: {
         create_booking: tool({
@@ -147,14 +242,11 @@ export async function POST(request: Request) {
             message: z.string().optional().describe("Any extra details (optional)"),
           }),
           execute: async (input) => {
-            const supabase = getServerSupabase();
-            if (!supabase) return { success: false, reason: "not_configured" };
             if (!input.name?.trim() || !input.phone?.trim())
               return { success: false, reason: "missing_contact" };
             if (!isValidFutureDate(input.preferred_date))
               return { success: false, reason: "invalid_date" };
 
-            // Keep free-text fields on the allowed lists (don't trust the prompt).
             const service = matchOption(input.service, bookingServices);
             if (!service)
               return { success: false, reason: "invalid_service", allowed: bookingServices };
@@ -206,15 +298,10 @@ export async function POST(request: Request) {
             name: z.string().describe("Customer full name"),
             phone: z.string().describe("Contact phone number"),
             email: z.string().optional().describe("Email (optional)"),
-            service_interest: z
-              .string()
-              .optional()
-              .describe("What service they're interested in (optional)"),
+            service_interest: z.string().optional().describe("Service they're interested in (optional)"),
             message: z.string().optional().describe("Any notes about their need (optional)"),
           }),
           execute: async (input) => {
-            const supabase = getServerSupabase();
-            if (!supabase) return { success: false, reason: "not_configured" };
             if (!input.name?.trim() || !input.phone?.trim())
               return { success: false, reason: "missing_contact" };
 
@@ -242,7 +329,6 @@ export async function POST(request: Request) {
               return { success: false, reason: "db_error" };
             }
 
-            // If a CRM pipeline exists, also drop the lead into its first stage.
             try {
               const { data: pipeline } = await supabase
                 .from("crm_pipelines")
@@ -283,10 +369,39 @@ export async function POST(request: Request) {
               }
             } catch (e) {
               console.error("ai lead → CRM push failed:", e);
-              // the enquiry is still saved; not fatal
             }
 
             return { success: true, lead: { name: input.name, phone: input.phone } };
+          },
+        }),
+
+        request_human: tool({
+          description:
+            "Escalate to a human team member. Call this when the customer explicitly asks to speak to a person / the owner / a real agent, or when you genuinely cannot help. After it succeeds, tell the customer a team member will join the chat shortly.",
+          inputSchema: z.object({
+            reason: z.string().optional().describe("Short reason for the handoff"),
+            name: z.string().optional().describe("Customer name, if known"),
+            phone: z.string().optional().describe("Customer phone, if known"),
+          }),
+          execute: async ({ reason, name, phone }) => {
+            const update: Record<string, unknown> = {
+              handoff_requested_at: new Date().toISOString(),
+            };
+            if (name?.trim()) update.customer_name = name.trim();
+            if (phone?.trim()) update.customer_phone = phone.trim();
+            const { error } = await supabase
+              .from("chat_sessions")
+              .update(update)
+              .eq("session_id", sessionId);
+            if (error) {
+              console.error("handoff flag failed:", error.message);
+              return { success: false, reason: "db_error" };
+            }
+            await notifyOwnerHandoff(sessionId, { reason, name, phone });
+            return {
+              success: true,
+              message: "A team member has been notified and will join this chat shortly.",
+            };
           },
         }),
       },
@@ -295,12 +410,10 @@ export async function POST(request: Request) {
     const content =
       result.text?.trim() ||
       "Sorry, I didn't quite catch that — could you say it another way?";
-    logMessage(sessionId, "assistant", content);
-    return fallback(content);
+    logMessage(supabase, sessionId, "assistant", content);
+    return Response.json({ mode: "ai", content });
   } catch (e) {
     console.error("chat route error:", e);
-    return fallback(
-      `Sorry, I hit a snag. Please call us on **${site.phone}** or [WhatsApp us](https://wa.me/${site.whatsapp}) and we'll help right away.`
-    );
+    return Response.json({ mode: "ai", content: ERROR_REPLY });
   }
 }
