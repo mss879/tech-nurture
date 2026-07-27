@@ -41,7 +41,7 @@ export const nav = [
     ],
   },
   { label: "Blog", href: "/blog" },
-  { label: "Book", href: "/book" },
+  { label: "Products", href: "/products" },
   { label: "Contact", href: "/contact" },
 ];
 
