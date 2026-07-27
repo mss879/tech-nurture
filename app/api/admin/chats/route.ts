@@ -1,4 +1,5 @@
 import { getServerSupabase, notConfigured } from "@/lib/supabase/server";
+import { requireNav } from "@/lib/admin/permissions";
 
 export const runtime = "nodejs";
 
@@ -15,6 +16,9 @@ type LastMsg = {
    - (none)         → { sessions } : all conversations, newest activity first, each
                                      annotated with its last message                */
 export async function GET(request: Request) {
+  const gate = await requireNav("chats");
+  if ("error" in gate) return gate.error;
+
   const supabase = getServerSupabase();
   if (!supabase) return notConfigured();
 
@@ -87,6 +91,9 @@ export async function GET(request: Request) {
 /* POST { sessionId, content } — reply as the human team. Auto-switches the
    conversation to manual so the AI stops answering. */
 export async function POST(request: Request) {
+  const gate = await requireNav("chats");
+  if ("error" in gate) return gate.error;
+
   const supabase = getServerSupabase();
   if (!supabase) return notConfigured();
 
@@ -118,6 +125,9 @@ export async function POST(request: Request) {
 
 /* PATCH { sessionId, mode?, status? } — toggle AI/manual, open/close. */
 export async function PATCH(request: Request) {
+  const gate = await requireNav("chats");
+  if ("error" in gate) return gate.error;
+
   const supabase = getServerSupabase();
   if (!supabase) return notConfigured();
 
@@ -146,6 +156,9 @@ export async function PATCH(request: Request) {
 
 /* DELETE ?id=<sessionId> — remove a conversation and its messages. */
 export async function DELETE(request: Request) {
+  const gate = await requireNav("chats");
+  if ("error" in gate) return gate.error;
+
   const supabase = getServerSupabase();
   if (!supabase) return notConfigured();
 

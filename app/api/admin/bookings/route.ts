@@ -1,9 +1,13 @@
 import { getServerSupabase, notConfigured } from "@/lib/supabase/server";
+import { requireNav } from "@/lib/admin/permissions";
 import { phoneKey } from "@/lib/phone";
 
 const STATUSES = ["new", "handling", "completed", "cancelled"];
 
 export async function GET(request: Request) {
+  const gate = await requireNav("bookings");
+  if ("error" in gate) return gate.error;
+
   const supabase = getServerSupabase();
   if (!supabase) return notConfigured();
 
@@ -69,6 +73,9 @@ export async function GET(request: Request) {
 /* PATCH — update status and/or editable fields: { id, status?, name?, phone?,
    email?, service?, district?, preferred_date?, preferred_time?, address?, message? } */
 export async function PATCH(request: Request) {
+  const gate = await requireNav("bookings");
+  if ("error" in gate) return gate.error;
+
   const supabase = getServerSupabase();
   if (!supabase) return notConfigured();
 
@@ -127,6 +134,9 @@ export async function PATCH(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  const gate = await requireNav("bookings");
+  if ("error" in gate) return gate.error;
+
   const supabase = getServerSupabase();
   if (!supabase) return notConfigured();
 

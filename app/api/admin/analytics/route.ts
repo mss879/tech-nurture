@@ -1,8 +1,12 @@
 import { getServerSupabase, notConfigured } from "@/lib/supabase/server";
+import { requireNav } from "@/lib/admin/permissions";
 
 /* Aggregated site analytics for the admin dashboard, read from the
    reporting views defined in 008_analytics.sql. */
 export async function GET() {
+  const gate = await requireNav("dashboard");
+  if ("error" in gate) return gate.error;
+
   const supabase = getServerSupabase();
   if (!supabase) return notConfigured();
 

@@ -1,38 +1,84 @@
 import { getServerSupabase, notConfigured } from "@/lib/supabase/server";
+import { requireNav, requireSuperAdmin } from "@/lib/admin/permissions";
+import { isSuperAdmin } from "@/lib/admin/types";
 
-const DEFAULT_STAGES = ["New", "Contacted", "Qualified", "Won", "Lost"];
+const DEFAULT_STAGES = [
+  { name: "New", kind: "active" },
+  { name: "Contacted", kind: "active" },
+  { name: "Qualified", kind: "active" },
+  { name: "Won", kind: "won" },
+  { name: "Lost", kind: "lost" },
+];
 
+/* GET — every pipeline with its stages, plus the leads the caller may
+   see: all of them for a super admin, only their own otherwise.
+
+   Pipelines and leads are fetched separately and stitched together rather
+   than embedding leads in the pipeline select. An embedded filter does
+   work, but it filters the embedded rows only — and swapping it for an
+   `!inner` join later (a natural-looking "optimisation") would silently
+   drop every pipeline where the user has no leads, dumping them on the
+   "No pipelines yet" screen. Two queries can't be broken that way. */
 export async function GET() {
+  const gate = await requireNav("crm");
+
+  // The Enquiries page asks for pipelines to fill its "Send to CRM"
+  // picker, and swallows failures into a misleading "No pipelines yet".
+  // An empty list is the honest answer for someone without CRM access.
+  if ("error" in gate) return Response.json({ pipelines: [] });
+  const me = gate.admin;
+
   const supabase = getServerSupabase();
   if (!supabase) return notConfigured();
 
-  const { data, error } = await supabase
-    .from("crm_pipelines")
-    .select(
-      "id, name, created_at, crm_stages(id, name, position), crm_leads(*)"
-    )
-    .order("created_at", { ascending: true });
+  const leadQuery = supabase.from("crm_leads").select("*");
+  if (!isSuperAdmin(me)) leadQuery.eq("assigned_to", me.id);
 
-  if (error) {
-    console.error("pipelines list failed:", error);
+  const [pipelineRes, leadRes] = await Promise.all([
+    supabase
+      .from("crm_pipelines")
+      .select("id, name, created_at, crm_stages(id, name, position, kind)")
+      .order("created_at", { ascending: true }),
+    leadQuery.order("created_at", { ascending: false }),
+  ]);
+
+  if (pipelineRes.error || leadRes.error) {
+    console.error("pipelines list failed:", pipelineRes.error ?? leadRes.error);
     return Response.json(
-      { error: "Could not load pipelines. Have you run 003_crm.sql?" },
+      {
+        error:
+          "Could not load pipelines. Have you run 003_crm.sql and 015_crm_access.sql?",
+      },
       { status: 500 }
     );
   }
 
-  // stages come back unordered — sort them by position
-  const pipelines = (data ?? []).map((p) => ({
+  const byPipeline = new Map<string, Record<string, unknown>[]>();
+  for (const lead of leadRes.data ?? []) {
+    const list = byPipeline.get(lead.pipeline_id) ?? [];
+    list.push(lead);
+    byPipeline.set(lead.pipeline_id, list);
+  }
+
+  const pipelines = (pipelineRes.data ?? []).map((p) => ({
     ...p,
+    // stages come back unordered — sort them by position
     crm_stages: [...(p.crm_stages ?? [])].sort(
       (a, b) => a.position - b.position
     ),
+    crm_leads: byPipeline.get(p.id) ?? [],
   }));
 
   return Response.json({ pipelines });
 }
 
+/* Creating, renaming and deleting a pipeline is structural, so it's
+   super-admin only — a team member works inside the pipelines they're
+   given. */
 export async function POST(request: Request) {
+  const gate = await requireSuperAdmin();
+  if ("error" in gate) return gate.error;
+
   const supabase = getServerSupabase();
   if (!supabase) return notConfigured();
 
@@ -60,9 +106,10 @@ export async function POST(request: Request) {
   }
 
   const { error: stagesError } = await supabase.from("crm_stages").insert(
-    DEFAULT_STAGES.map((stageName, i) => ({
+    DEFAULT_STAGES.map((stage, i) => ({
       pipeline_id: pipeline.id,
-      name: stageName,
+      name: stage.name,
+      kind: stage.kind,
       position: i,
     }))
   );
@@ -79,6 +126,9 @@ export async function POST(request: Request) {
 }
 
 export async function PATCH(request: Request) {
+  const gate = await requireSuperAdmin();
+  if ("error" in gate) return gate.error;
+
   const supabase = getServerSupabase();
   if (!supabase) return notConfigured();
 
@@ -107,13 +157,18 @@ export async function PATCH(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  const gate = await requireSuperAdmin();
+  if ("error" in gate) return gate.error;
+
   const supabase = getServerSupabase();
   if (!supabase) return notConfigured();
 
   const id = new URL(request.url).searchParams.get("id");
   if (!id) return Response.json({ error: "id is required." }, { status: 400 });
 
-  // stages & leads cascade via FK
+  // Stages and leads both cascade from the pipeline. 015 deliberately sets
+  // the stage → lead FK to `no action` rather than `restrict` so this still
+  // works — the check is deferred to the end of the statement.
   const { error } = await supabase.from("crm_pipelines").delete().eq("id", id);
   if (error) {
     console.error("pipeline delete failed:", error);

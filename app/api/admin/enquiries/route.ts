@@ -1,8 +1,12 @@
 import { getServerSupabase, notConfigured } from "@/lib/supabase/server";
+import { requireNav } from "@/lib/admin/permissions";
 
 const STATUSES = ["new", "contacted", "in_crm", "closed"];
 
 export async function GET() {
+  const gate = await requireNav("enquiries");
+  if ("error" in gate) return gate.error;
+
   const supabase = getServerSupabase();
   if (!supabase) return notConfigured();
 
@@ -22,6 +26,9 @@ export async function GET() {
 }
 
 export async function PATCH(request: Request) {
+  const gate = await requireNav("enquiries");
+  if ("error" in gate) return gate.error;
+
   const supabase = getServerSupabase();
   if (!supabase) return notConfigured();
 
@@ -49,6 +56,9 @@ export async function PATCH(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  const gate = await requireNav("enquiries");
+  if ("error" in gate) return gate.error;
+
   const supabase = getServerSupabase();
   if (!supabase) return notConfigured();
 

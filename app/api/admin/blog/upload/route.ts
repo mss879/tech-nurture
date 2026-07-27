@@ -1,4 +1,5 @@
 import { getServerSupabase, notConfigured } from "@/lib/supabase/server";
+import { requireNav } from "@/lib/admin/permissions";
 
 const MAX_BYTES = 5 * 1024 * 1024; // 5 MB
 const BUCKET = "blog";
@@ -17,6 +18,9 @@ const ALLOWED = new Map<string, string>([
    the public 'blog' Storage bucket via the service-role key and returns
    its public URL for use as a post cover image. */
 export async function POST(request: Request) {
+  const gate = await requireNav("blog");
+  if ("error" in gate) return gate.error;
+
   const supabase = getServerSupabase();
   if (!supabase) return notConfigured();
 

@@ -1,4 +1,5 @@
 import { getServerSupabase, notConfigured } from "@/lib/supabase/server";
+import { requireNav } from "@/lib/admin/permissions";
 import { phoneKey } from "@/lib/phone";
 
 /* GET
@@ -6,6 +7,9 @@ import { phoneKey } from "@/lib/phone";
    ?q=<text>   → search by name / phone / email
    (none)      → all clients, most-recently-active first */
 export async function GET(request: Request) {
+  const gate = await requireNav("clients");
+  if ("error" in gate) return gate.error;
+
   const supabase = getServerSupabase();
   if (!supabase) return notConfigured();
 
@@ -90,6 +94,9 @@ export async function GET(request: Request) {
 
 /* POST — manually add a client: { name, phone?, email?, district?, notes? } */
 export async function POST(request: Request) {
+  const gate = await requireNav("clients");
+  if ("error" in gate) return gate.error;
+
   const supabase = getServerSupabase();
   if (!supabase) return notConfigured();
 
@@ -135,6 +142,9 @@ export async function POST(request: Request) {
 
 /* PATCH — edit a client: { id, name?, phone?, email?, district?, province?, notes? } */
 export async function PATCH(request: Request) {
+  const gate = await requireNav("clients");
+  if ("error" in gate) return gate.error;
+
   const supabase = getServerSupabase();
   if (!supabase) return notConfigured();
 
@@ -183,6 +193,9 @@ export async function PATCH(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  const gate = await requireNav("clients");
+  if ("error" in gate) return gate.error;
+
   const supabase = getServerSupabase();
   if (!supabase) return notConfigured();
 

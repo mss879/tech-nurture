@@ -24,22 +24,56 @@ In the Supabase dashboard → **SQL Editor**, run each file in
 | `011_seed_blog.sql` | **Optional** — seeds the 5 starter posts | Blog |
 | `012_ai_agent.sql` | AI chat log + `ai` lead/booking source | (chat widget) |
 | `013_live_chat.sql` | Chat sessions + human handoff / takeover | Live Chat |
+| `014_admin_users.sql` | Team members, roles and permissions | Users & Access |
+| `015_crm_access.sql` | Lead assignment, Won/Lost outcomes, stage history | CRM |
+| `016_todos.sql` | To-dos, notifications, due-date reminders | To-dos |
 
 > `010_dashboard.sql` replaces the view created in `004`, so it must run after
 > `005`–`008`. `011` is optional — skip it to start with an empty blog (the
 > public `/blog` page falls back to the 5 built-in posts until you publish).
+>
+> **Read the header of `014_admin_users.sql` before running it.** It promotes
+> one email address to super admin and drops every other existing account to
+> limited access. If that address doesn't exist yet it aborts on purpose,
+> rather than leaving you with no super admin at all.
 
-## 2. Create your admin login
+## 2. Admin accounts
 
-The `/admin` dashboard is protected by Supabase Auth.
+The `/admin` dashboard is protected by Supabase Auth, and — from `014` onwards —
+by a per-person permission row in `public.admin_users`.
 
-1. **Authentication → Users → Add user** — set your email + password.
-2. **Disable public sign-ups** so nobody can create their own admin account:
+**First-time setup**
+
+1. **Authentication → Users → Add user** — create `admin@technurture.lk` with a
+   password. (Using a different address? Change the one line marked in
+   `014_admin_users.sql` before you run it.)
+2. **Disable public sign-ups** so nobody can create their own account:
    **Authentication → Providers → Email → turn off "Enable sign ups"**
    (older UIs: **Authentication → Settings → "Allow new users to sign up"**).
+   This does *not* affect the admin's own "Add team member" button, which uses
+   the service-role key.
+3. Run `014_admin_users.sql`. That account becomes the **super admin**.
 
-Any user you add this way can sign in at `/admin/login`. There is no public
-sign-up form in the app.
+**Everyone else** is added from inside the app — **Users & Access → Add team
+member**. That screen sets their password, which menu items they can open, and
+what they may do to CRM leads. Accounts created directly in the Supabase
+dashboard can't sign in to the admin; they show up on that page as
+"no access set up" so you can add them properly.
+
+**Roles**
+
+- **Super admin** — sees every menu and every lead, adds and removes team
+  members, assigns leads and to-dos, manages pipeline stages, and is the only
+  person who can move a lead back to an earlier stage.
+- **Team member** — sees only the menus they've been given and only the leads
+  assigned to them.
+
+**Locked out?** If there's no working super admin, run this in the SQL editor:
+
+```sql
+update public.admin_users set role = 'super_admin', is_active = true
+where email = 'admin@technurture.lk';
+```
 
 ## 3. Storage (blog images)
 
@@ -104,3 +138,13 @@ in-admin badge works without it.
 - The `/admin` dashboard reads and writes everything through server API routes
   using the **service-role key**, which bypasses RLS. The browser only ever
   holds the anon key.
+- Because the service-role key bypasses RLS, **permissions are enforced in the
+  application, not in Postgres**. Every `/api/admin/*` route calls a guard in
+  `lib/admin/permissions.ts`, and every guarded page calls one too — a check in
+  the layout alone wouldn't be enough, since layouts don't re-render when you
+  navigate between admin pages.
+- **Due-date reminders are never stored.** The bell derives them from the
+  `todo_reminders` view every time it polls, so changing a to-do's due date, or
+  completing it, can't leave a stale "due tomorrow" behind. Only *dismissals*
+  are stored — keyed on the due date and bucket, so dismissing "due tomorrow"
+  goes quiet today and speaks up again in the morning as "due today".

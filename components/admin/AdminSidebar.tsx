@@ -4,48 +4,37 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import {
-  LayoutDashboard,
-  MessageSquare,
-  Headset,
-  CalendarCheck,
-  KanbanSquare,
-  Users,
-  Newspaper,
-  Globe,
-  LogOut,
-  Menu,
-  X,
-} from "lucide-react";
+import { Globe, LogOut, Menu, X } from "lucide-react";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
+import { NAV_ITEMS, landingPathFor, navItemsFor } from "@/lib/admin/nav";
+import { NAV_ICONS } from "@/components/admin/navIcons";
+import NotificationBell from "@/components/admin/NotificationBell";
+import type { AdminProfile } from "@/lib/admin/types";
 
-const menu = [
-  { label: "Dashboard", href: "/admin", icon: LayoutDashboard, badge: false },
-  { label: "Inquiries", href: "/admin/enquiries", icon: MessageSquare, badge: false },
-  { label: "Live Chat", href: "/admin/chats", icon: Headset, badge: true },
-  { label: "Services Booking", href: "/admin/bookings", icon: CalendarCheck, badge: false },
-  { label: "CRM", href: "/admin/crm", icon: KanbanSquare, badge: false },
-  { label: "Clients", href: "/admin/clients", icon: Users, badge: false },
-  { label: "Blog", href: "/admin/blog", icon: Newspaper, badge: false },
-];
+type Counts = { chatsPending?: number; todosDue?: number };
 
-export default function AdminSidebar() {
+export default function AdminSidebar({ me }: { me?: AdminProfile | null }) {
   const pathname = usePathname();
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
-  const [pending, setPending] = useState(0);
+  const [counts, setCounts] = useState<Counts>({});
 
-  // Poll the count of conversations where a visitor asked for a human, so the
-  // owner sees a badge on "Live Chat" from anywhere in the admin.
+  // Before the permission tables exist, `me` is absent and everyone sees the
+  // full menu — the pre-014 behaviour.
+  const items = me ? navItemsFor(me) : NAV_ITEMS;
+  const home = me ? landingPathFor(me) : "/admin";
+
+  // One poll for every sidebar badge, so a second badge doesn't mean a
+  // second interval.
   useEffect(() => {
     let active = true;
     const check = async () => {
       try {
-        const res = await fetch("/api/admin/chats?count=pending");
+        const res = await fetch("/api/admin/badges");
         if (!res.ok) return;
         const data = await res.json();
-        if (active && typeof data?.pending === "number") setPending(data.pending);
+        if (active) setCounts(data ?? {});
       } catch {
         // ignore
       }
@@ -72,11 +61,13 @@ export default function AdminSidebar() {
 
   const links = (
     <nav className="flex flex-col gap-1">
-      {menu.map((item) => {
+      {items.map((item) => {
+        const Icon = NAV_ICONS[item.key];
         const active =
           item.href === "/admin"
             ? pathname === "/admin"
             : pathname.startsWith(item.href);
+        const count = item.badgeKey ? (counts[item.badgeKey] ?? 0) : 0;
         return (
           <Link
             key={item.href}
@@ -88,15 +79,15 @@ export default function AdminSidebar() {
                 : "text-white/60 hover:bg-white/5 hover:text-white"
             }`}
           >
-            <item.icon className="size-4.5" />
+            <Icon className="size-4.5" />
             {item.label}
-            {item.badge && pending > 0 && (
+            {count > 0 && (
               <span
                 className={`ml-auto grid min-w-5 place-items-center rounded-full px-1.5 py-0.5 text-[0.65rem] font-bold ${
                   active ? "bg-ink text-lime" : "bg-red-500 text-white"
                 }`}
               >
-                {pending}
+                {count}
               </span>
             )}
           </Link>
@@ -127,7 +118,7 @@ export default function AdminSidebar() {
     <>
       {/* mobile top bar */}
       <div className="fixed inset-x-0 top-0 z-40 flex items-center justify-between bg-ink px-5 py-3 lg:hidden">
-        <Link href="/admin" className="flex items-center gap-2">
+        <Link href={home} className="flex items-center gap-2">
           <Image
             src="/tech-nature-side.png"
             alt="TechNurture"
@@ -139,13 +130,17 @@ export default function AdminSidebar() {
             Admin
           </span>
         </Link>
-        <button
-          onClick={() => setOpen((v) => !v)}
-          aria-label="Toggle admin menu"
-          className="grid size-9 place-items-center rounded-lg border border-white/15 text-white"
-        >
-          {open ? <X className="size-4" /> : <Menu className="size-4" />}
-        </button>
+        <div className="flex items-center gap-2">
+          {/* the bell's other mount point — the topbar is desktop-only */}
+          {me && <NotificationBell dark />}
+          <button
+            onClick={() => setOpen((v) => !v)}
+            aria-label="Toggle admin menu"
+            className="grid size-9 place-items-center rounded-lg border border-white/15 text-white"
+          >
+            {open ? <X className="size-4" /> : <Menu className="size-4" />}
+          </button>
+        </div>
       </div>
       {open && (
         <div className="fixed inset-x-0 top-[57px] z-40 flex max-h-[calc(100vh-57px)] flex-col overflow-y-auto border-t border-white/10 bg-ink p-4 lg:hidden">
@@ -155,7 +150,7 @@ export default function AdminSidebar() {
       )}
       {/* desktop sidebar */}
       <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col bg-ink px-4 py-6 lg:flex">
-        <Link href="/admin" className="mb-8 flex items-center gap-2 px-2">
+        <Link href={home} className="mb-8 flex items-center gap-2 px-2">
           <Image
             src="/tech-nature-side.png"
             alt="TechNurture"

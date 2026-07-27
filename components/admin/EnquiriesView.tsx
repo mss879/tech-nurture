@@ -20,6 +20,8 @@ import {
   PageHeader,
   formatDate,
 } from "./ui";
+import { useMe } from "./MeProvider";
+import { can } from "@/lib/admin/types";
 
 const STATUSES = ["new", "contacted", "in_crm", "closed"];
 
@@ -38,6 +40,10 @@ type Enquiry = {
 type Pipeline = { id: string; name: string };
 
 export default function EnquiriesView() {
+  const me = useMe();
+  // Pushing an enquiry into the CRM creates a lead, so it needs the same
+  // permission as adding one directly.
+  const mayCreateLeads = me ? can(me, "can_create_leads") : false;
   const [enquiries, setEnquiries] = useState<Enquiry[] | null>(null);
   const [pipelines, setPipelines] = useState<Pipeline[]>([]);
   const [error, setError] = useState<ApiError | Error | null>(null);
@@ -255,6 +261,8 @@ export default function EnquiriesView() {
                           </button>
                         </div>
 
+                        {mayCreateLeads && (
+                          <>
                         <h3 className="mb-2 mt-6 text-xs font-semibold uppercase tracking-wider text-slate-400">
                           Send to CRM
                         </h3>
@@ -301,6 +309,8 @@ export default function EnquiriesView() {
                               Send to CRM
                             </button>
                           </div>
+                        )}
+                          </>
                         )}
                       </div>
                     </div>
