@@ -2,8 +2,8 @@ import { getServerSupabase, notConfigured } from "@/lib/supabase/server";
 import { requireNav, requireCapability } from "@/lib/admin/permissions";
 import { slugify } from "@/lib/admin/slug";
 
-/* Product categories. A product belongs to one; the public /shop page
-   filters on them.
+/* Product categories. A product belongs to one, and it is shown above the
+   name on the public product page.
 
    Managing categories counts as editing the catalogue, so it needs
    can_edit_products rather than a permission of its own — one more

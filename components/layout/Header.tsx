@@ -7,11 +7,23 @@ import { useEffect, useState } from "react";
 import { Menu, X, ChevronDown } from "lucide-react";
 import { nav, site } from "@/lib/site";
 import Magnetic from "@/components/ui/Magnetic";
+import { useProductNav } from "@/components/layout/ProductNav";
 
 export default function Header({ embedded = false }: { embedded?: boolean }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const pathname = usePathname();
   const [isSticky, setIsSticky] = useState(false);
+  // Published products, for the Products drop-down (see ProductNav).
+  const productNav = useProductNav();
+
+  /* Services carries its children in lib/site.ts; Products gets them from
+     the CMS. Either way the header renders one drop-down. */
+  const childrenFor = (item: (typeof nav)[number]) =>
+    item.href === "/products"
+      ? productNav
+      : "children" in item
+        ? item.children
+        : undefined;
 
   useEffect(() => setMenuOpen(false), [pathname]);
 
@@ -50,9 +62,9 @@ export default function Header({ embedded = false }: { embedded?: boolean }) {
       {nav.map((item) => {
         const active =
           item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
-        const children = "children" in item ? item.children : undefined;
+        const children = childrenFor(item);
 
-        if (children) {
+        if (children && children.length > 0) {
           return (
             <div key={item.href} className="group relative">
               <Link
@@ -139,7 +151,7 @@ export default function Header({ embedded = false }: { embedded?: boolean }) {
     >
       <nav className="flex flex-col">
         {nav.map((item) => {
-          const children = "children" in item ? item.children : undefined;
+          const children = childrenFor(item);
           return (
             <div key={item.href} className="border-b border-slate-100 last:border-0">
               <Link
@@ -148,7 +160,7 @@ export default function Header({ embedded = false }: { embedded?: boolean }) {
               >
                 {item.label}
               </Link>
-              {children && (
+              {children && children.length > 0 && (
                 <div className="mb-2 ml-3 flex flex-col gap-1 border-l border-slate-100 pl-3">
                   {children
                     .filter((c) => c.href !== item.href)

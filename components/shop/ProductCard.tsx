@@ -20,7 +20,7 @@ export default function ProductCard({ product }: { product: Product }) {
     <div className="group relative flex h-full flex-col overflow-hidden rounded-[1.75rem] border border-slate-200/60 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
       {/* image */}
       <Link
-        href={`/shop/${product.slug}`}
+        href={`/products/${product.slug}`}
         className="relative block aspect-[4/5] overflow-hidden bg-gradient-to-b from-white to-slate-50/50"
       >
         {cover ? (
@@ -51,7 +51,7 @@ export default function ProductCard({ product }: { product: Product }) {
       {/* body */}
       <div className="flex flex-1 flex-col p-6">
         <p className="eyebrow text-slate-400">{product.category}</p>
-        <Link href={`/shop/${product.slug}`}>
+        <Link href={`/products/${product.slug}`}>
           <h3 className="mt-2 text-lg font-semibold text-slate-800 transition-colors hover:text-green">
             {product.name}
           </h3>
@@ -152,7 +152,7 @@ export default function ProductCard({ product }: { product: Product }) {
         </div>
 
         <Link
-          href={`/shop/${product.slug}`}
+          href={`/products/${product.slug}`}
           className="mt-4 inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-green underline-offset-4 hover:underline"
         >
           Full specs & gallery <ArrowUpRight className="size-3.5" />

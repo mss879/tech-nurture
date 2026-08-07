@@ -9,8 +9,8 @@ import type { Category, Feature, Product, Tag, Variant } from "./products";
    the browser bundle.
 
    Every function here degrades to an empty result when Supabase isn't
-   configured or the tables don't exist yet, so /shop renders its
-   "nothing here yet" state instead of throwing. */
+   configured or the tables don't exist yet, so the header's Products menu
+   simply comes up empty instead of throwing. */
 
 const PRODUCT_SELECT = `
   id, slug, name, series, form, blurb, images, pdf_url, features, specs,
@@ -171,8 +171,7 @@ export async function getCategories(): Promise<Category[]> {
   return data ?? [];
 }
 
-/* Only tags that are actually on a published product — an empty filter
-   chip is worse than no chip. */
+/* Only tags that are actually on a published product. */
 export async function getTagsInUse(products: Product[]): Promise<Tag[]> {
   const seen = new Map<string, Tag>();
   for (const p of products) {

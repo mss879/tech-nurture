@@ -1,5 +1,5 @@
 /* URL-safe slug from a display name. Used for product, category and tag
-   slugs, which end up in public URLs like /shop/lusako-inline-purifier. */
+   slugs, which end up in public URLs like /products/lusako-inline-purifier. */
 export function slugify(value: string) {
   return value
     .toLowerCase()

@@ -19,6 +19,18 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  /* The shop was folded into /products — the browse page is gone and each
+     product is reached straight from the header menu. Keep the old URLs
+     alive so links already in the wild (and Google) land in the right
+     place. Order matters: /shop/checkout must be matched before /shop/:slug. */
+  async redirects() {
+    return [
+      { source: "/shop/checkout", destination: "/checkout", permanent: true },
+      { source: "/shop/:slug", destination: "/products/:slug", permanent: true },
+      { source: "/shop", destination: "/products", permanent: true },
+    ];
+  },
+
   async headers() {
     return [
       {

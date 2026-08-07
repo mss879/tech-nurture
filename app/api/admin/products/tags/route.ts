@@ -2,8 +2,8 @@ import { getServerSupabase, notConfigured } from "@/lib/supabase/server";
 import { requireNav, requireCapability } from "@/lib/admin/permissions";
 import { slugify } from "@/lib/admin/slug";
 
-/* Product tags — what the public /shop page filters on. A product can
-   carry any number of them. */
+/* Product tags — the badges shown on a product card. A product can carry
+   any number of them. */
 
 export async function POST(request: Request) {
   const gate = await requireNav("products");

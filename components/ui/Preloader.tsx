@@ -1,10 +1,34 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import { usePathname } from "next/navigation";
 import * as THREE from "three";
 import gsap from "gsap";
 
+/* The welcome sequence belongs to the homepage alone — every other page should
+   load straight into its content (and never have its scroll locked for it).
+
+   The decision is taken once, when the site layout mounts, so it follows the
+   page the visitor actually landed on. The layout survives client-side
+   navigation, which means coming back to / later never replays the intro. */
 export default function Preloader() {
+  const pathname = usePathname();
+  const [enabled] = useState(() => pathname === "/");
+
+  useEffect(() => {
+    if (enabled) return;
+    /* No intro on this load, so release anything waiting on it right away —
+       the hero holds its entrance animation until this fires. */
+    (
+      window as unknown as { __preloaderComplete?: boolean }
+    ).__preloaderComplete = true;
+    window.dispatchEvent(new Event("preloaderComplete"));
+  }, [enabled]);
+
+  return enabled ? <PreloaderOverlay /> : null;
+}
+
+function PreloaderOverlay() {
   const [progress, setProgress] = useState(0);
   
   const containerRef = useRef<HTMLDivElement>(null);

@@ -4,12 +4,24 @@ import Footer from "@/components/layout/Footer";
 import Preloader from "@/components/ui/Preloader";
 import Tracker from "@/components/analytics/Tracker";
 import ChatWidget from "@/components/ai/ChatWidget";
+import { ProductNavProvider } from "@/components/layout/ProductNav";
+import { getProducts } from "@/lib/products.server";
 
-export default function SiteLayout({
+// The header's Products drop-down is CMS-driven; refresh it at most once
+// a minute, in step with the other Supabase-backed pages.
+export const revalidate = 60;
+
+export default async function SiteLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const products = await getProducts();
+  const productNav = products.map((p) => ({
+    label: p.name,
+    href: `/products/${p.slug}`,
+  }));
+
   return (
-    <>
+    <ProductNavProvider items={productNav}>
       <Preloader />
       <SmoothScroll>
         <Header />
@@ -18,6 +30,6 @@ export default function SiteLayout({
       </SmoothScroll>
       <Tracker />
       <ChatWidget />
-    </>
+    </ProductNavProvider>
   );
 }

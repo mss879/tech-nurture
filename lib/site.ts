@@ -40,8 +40,11 @@ export const nav = [
       { label: "Maintenance & AMC", href: "/services/maintenance-amc" },
     ],
   },
-  { label: "Blog", href: "/blog" },
+  // No `children` here: the Products drop-down is built from the published
+  // products at runtime (see components/layout/ProductNav.tsx). The href is
+  // only a landing pad — /products forwards straight to a product page.
   { label: "Products", href: "/products" },
+  { label: "Blog", href: "/blog" },
   { label: "Contact", href: "/contact" },
 ];
 

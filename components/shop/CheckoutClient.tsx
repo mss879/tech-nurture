@@ -111,7 +111,7 @@ export default function CheckoutClient() {
           </div>
           <div className="mt-10 flex flex-col justify-center gap-3 sm:flex-row">
             <Link
-              href="/shop"
+              href="/products"
               className="btn-lime inline-flex items-center justify-center px-7 py-3.5 text-sm"
             >
               Continue shopping
@@ -141,7 +141,7 @@ export default function CheckoutClient() {
             Add a purifier to your basket to place an order.
           </p>
           <Link
-            href="/shop"
+            href="/products"
             className="btn-lime mt-8 inline-flex items-center justify-center px-7 py-3.5 text-sm"
           >
             Browse products
@@ -156,10 +156,10 @@ export default function CheckoutClient() {
     <section className="bg-slate-50 px-6 pb-24 pt-32 text-slate-800 sm:pt-36">
       <div className="mx-auto max-w-6xl">
         <Link
-          href="/shop"
+          href="/products"
           className="mb-8 inline-flex items-center gap-1 text-sm font-medium text-slate-500 transition hover:text-green"
         >
-          <ChevronLeft className="size-4" /> Back to shop
+          <ChevronLeft className="size-4" /> Back to products
         </Link>
 
         <h1 className="display text-3xl font-semibold text-slate-900 sm:text-4xl">

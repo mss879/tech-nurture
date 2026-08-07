@@ -30,7 +30,8 @@ export type Product = {
   form: string;
   blurb: string;
   tags: string[];
-  /* Tag slugs, for filtering on /shop. */
+  /* Tag slugs — kept for grouping in the admin; the badges on a product
+     card render `tags` (the display names). */
   tagSlugs: string[];
   images: string[];
   pdf: string;
@@ -52,15 +53,6 @@ export type Tag = { id: string; name: string; slug: string };
 export function formatLKR(amount: number) {
   return `Rs ${Number(amount).toLocaleString("en-LK")}`;
 }
-
-/* The same terms for every product, shown on each detail page. */
-export const purchaseTerms = {
-  installation: "Free installation up to 5m of piping, done by our own technicians.",
-  delivery: "Free delivery in Colombo and suburbs. Island-wide delivery quoted on order.",
-  warranty: "2-year warranty on the unit, including 3 free services.",
-  afterSales:
-    "Annual Maintenance Contracts available after the warranty period, with genuine Lusako filters and priority callouts.",
-};
 
 /* A product is only orderable if it has at least one model with a price. */
 export function lowestPrice(product: Product) {

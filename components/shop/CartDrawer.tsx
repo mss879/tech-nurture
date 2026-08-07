@@ -121,7 +121,7 @@ export default function CartDrawer() {
             </span>
           </div>
           <Link
-            href="/shop/checkout"
+            href="/checkout"
             onClick={closeCart}
             aria-disabled={items.length === 0}
             className={`btn-lime flex w-full items-center justify-center gap-2 px-6 py-3.5 text-sm ${
