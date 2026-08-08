@@ -2,7 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowUpRight } from "lucide-react";
 import Reveal from "@/components/ui/Reveal";
-import { posts } from "@/lib/site";
+import { getPublishedPosts } from "@/lib/blog";
 
 function formatDate(d: string) {
   return new Date(d)
@@ -14,15 +14,15 @@ function formatDate(d: string) {
     .toUpperCase();
 }
 
-export default function BlogPreview() {
-  const list = posts.slice(0, 3);
+export default async function BlogPreview() {
+  const list = (await getPublishedPosts()).slice(0, 3);
   return (
     <section className="bg-mist py-24 text-slate sm:py-32">
       <div className="mx-auto grid max-w-7xl gap-12 px-6 lg:grid-cols-[0.8fr_1.2fr]">
         {/* left intro */}
         <div className="lg:sticky lg:top-32 lg:h-fit">
           <Reveal>
-            <p className="eyebrow flex items-center gap-2 text-green">
+            <p className="eyebrow flex items-center gap-2 text-green-600">
               <span className="size-1.5 rounded-full bg-green" />
               Blog & Articles
             </p>
@@ -34,8 +34,8 @@ export default function BlogPreview() {
           </Reveal>
           <Reveal delay={0.1}>
             <p className="mt-5 max-w-sm text-lg text-slate/60">
-              Whether you&apos;re optimizing today or building for tomorrow, we
-              help you move faster with confidence.
+              Practical guidance from our technicians — what the warning signs
+              actually mean, and what preventive care is worth doing.
             </p>
           </Reveal>
           <Reveal delay={0.15}>
@@ -70,7 +70,7 @@ export default function BlogPreview() {
                   <h3 className="mt-3 text-xl font-semibold leading-snug text-slate sm:text-2xl">
                     {post.title}
                   </h3>
-                  <span className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-green opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                  <span className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-green-600 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
                     Read article <ArrowUpRight className="size-4" />
                   </span>
                 </div>

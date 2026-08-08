@@ -1,9 +1,15 @@
 /* ============================================================
    TechNurture — central content source
-   Home-appliance service business: Air Conditioning, Refrigerator
-   & Freezer, Washing Machine, and Maintenance & AMC.
+   Home & business appliance service company: Air Conditioning,
+   Refrigerator & Freezer, Inline Water Purifiers, Bottle Water
+   Dispensers, and Maintenance & AMC.
    Brand: TechNurture Pvt Ltd · Tagline: "Technology Inspired by Nurture"
    Subsidiary of Lusako Holdings Pvt Ltd.
+
+   NOTE ON `listed`: a service with `listed: false` keeps its page and
+   its URL, but is left out of the header drop-down, the footer menu,
+   the /services grid and every `related` block. Used to quietly retire
+   a service line without breaking inbound links or search results.
    ============================================================ */
 
 export const site = {
@@ -21,8 +27,25 @@ export const site = {
   email: "hello@technurture.lk", // TODO: confirm real email (domain is technurture.lk)
   address: "19A, 1st Lane, Gothami Road, Colombo 08",
   domain: "technurture.lk",
+  /* LAUNCH BLOCKER — confirm with the client before go-live.
+     `hours` is the human-readable string shown on /contact and /book;
+     openDays/opens/closes are the machine-readable form used by the
+     LocalBusiness JSON-LD on the homepage. Keep the three in step. */
   hours: "Mon – Sat · 8:30am – 6:00pm", // TODO: confirm business hours
-  geo: { lat: 6.9271, lng: 79.8612 }, // TODO: real coordinates (currently central Colombo)
+  openDays: [
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+  ],
+  opens: "08:30",
+  closes: "18:00",
+  // TODO: confirm the exact map pin for 19A, 1st Lane, Gothami Road with the
+  // client. Currently the Gothami Road / Borella area, not a surveyed point —
+  // this drives local-pack distance ranking and the map embed on /contact.
+  geo: { lat: 6.9147, lng: 79.8776 },
   trustLine:
     "A subsidiary of Lusako Holdings Pvt Ltd, backed by over a decade of experience serving leading banks, hospitals, corporate organizations, and institutions across Sri Lanka.",
 };
@@ -33,10 +56,19 @@ export const nav = [
   {
     label: "Services",
     href: "/services",
+    /* Clicking "Services" opens /services, which lists them all; the
+       drop-down is a shortcut straight to an individual service. */
     children: [
       { label: "Air Conditioning", href: "/services/air-conditioning" },
       { label: "Refrigerator & Freezer", href: "/services/refrigerator" },
-      { label: "Washing Machine", href: "/services/washing-machine" },
+      {
+        label: "Inline Water Purifiers",
+        href: "/services/inline-water-purifiers",
+      },
+      {
+        label: "Bottle Water Dispensers",
+        href: "/services/bottle-water-dispensers",
+      },
       { label: "Maintenance & AMC", href: "/services/maintenance-amc" },
     ],
   },
@@ -77,6 +109,10 @@ export const bookingServices = [
   "Air Conditioning — Installation",
   "Air Conditioning — Gas Charging",
   "Refrigerator / Freezer — Repair",
+  "Inline Water Purifier — Installation",
+  "Inline Water Purifier — Service / Filter Replacement",
+  "Bottle Water Dispenser — Service / Sanitization",
+  "Bottle Water Dispenser — Repair",
   "Washing Machine — Repair",
   "Annual Maintenance Contract (AMC)",
   "Other",
@@ -130,7 +166,7 @@ export const hero = {
     { label: "Genuine Parts", color: "lime" },
   ],
   headline: ["Reliable systems.", "Total confidence."],
-  sub: "Expert repair, servicing and maintenance for air conditioners, refrigerators and washing machines — keeping homes and businesses across Sri Lanka cool, fresh and running.",
+  sub: "Expert repair, servicing and maintenance for air conditioners, refrigerators, inline water purifiers and bottle water dispensers — keeping homes and businesses across Sri Lanka cool, fresh and running.",
   primaryCta: { label: "Explore Services", href: "/services" },
   secondaryCta: { label: "Contact Us", href: "/contact" },
 };
@@ -150,7 +186,7 @@ export const creator = {
 export const stats = [
   { value: 10, suffix: "+", label: "Years of industry experience" },
   { value: 100, suffix: "%", label: "Island-wide service coverage" },
-  { value: 500, suffix: "+", label: "Appliances serviced & repaired" },
+  { value: 5000, suffix: "+", label: "Appliances serviced & repaired" },
 ];
 
 export const partnershipsIntro = {
@@ -174,7 +210,7 @@ export const industries = [
 export const about = {
   eyebrow: "About Us",
   heading: "We help homes and businesses run cooler, fresher and with total confidence.",
-  body: "TechNurture Pvt Ltd brings reliable technicians, professional service and modern processes to help you repair, maintain and depend on your air conditioners, refrigerators and washing machines.",
+  body: "TechNurture Pvt Ltd brings reliable technicians, professional service and modern processes to help you repair, maintain and depend on your air conditioners, refrigerators, inline water purifiers and bottle water dispensers.",
   story:
     "TechNurture Pvt Ltd is a home-appliance service company dedicated to delivering reliable repairs, professional maintenance, and exceptional customer experiences across Sri Lanka. As a subsidiary of Lusako Holdings Pvt Ltd, TechNurture is built on a foundation of technical excellence, operational discipline, and customer-centric service.",
   heritage:
@@ -196,27 +232,39 @@ export const services = {
   eyebrow: "Services",
   heading: "Expertise built on insight & experience",
   sub: "Dependable appliance repair and maintenance grounded in over a decade of field experience, genuine parts and proven service procedures.",
+  /* Each card carries its own `href`. Cards and service pages are not 1:1 —
+     card 03 covers both water services — so the destination has to be
+     explicit rather than derived from the icon key. */
   cards: [
     {
       icon: "air",
+      href: "/services/air-conditioning",
       title: "Air Conditioning",
       body: "Repair, servicing, gas charging and installation for split, inverter and commercial AC — efficient cooling with lower bills.",
       points: ["Repairs", "Servicing", "Gas Charging", "Installation"],
     },
     {
       icon: "fridge",
+      href: "/services/refrigerator",
       title: "Refrigerator & Freezer",
       body: "Cooling faults, gas refilling, compressor, thermostat and door-seal repairs for fridges and freezers of every brand.",
       points: ["No-Cooling Repair", "Gas Refilling", "Compressor & PCB", "Commercial Units"],
     },
     {
-      icon: "washer",
-      title: "Washing Machine",
-      body: "Drain, spin, motor, drum and PCB repairs for front-load, top-load and fully-automatic washing machines.",
-      points: ["Drain & Spin", "Motor & Drum", "Electronics & PCB", "Inlet & Leaks"],
+      icon: "water",
+      href: "/services/inline-water-purifiers",
+      title: "Inline Water Purifiers & Bottle Water Dispensers",
+      body: "Installation, preventive maintenance, repairs, sanitization, filter replacement and annual service contracts for water purifiers and bottle water dispensers.",
+      points: [
+        "Tank Chlorination & Steam Sanitization",
+        "Bacterial Disinfection",
+        "Filter Replacements",
+        "Water Tests",
+      ],
     },
     {
       icon: "wrench",
+      href: "/services/maintenance-amc",
       title: "Maintenance & AMC",
       body: "Scheduled preventive maintenance and annual service contracts that reduce breakdowns and extend appliance life.",
       points: ["Comprehensive AMC", "Non-Comprehensive AMC", "On-Call Service", "Priority Support"],
@@ -235,11 +283,20 @@ export const services = {
      Sri Lanka" (service intent)
    · /services/refrigerator     → "refrigerator / fridge repair
      Sri Lanka" (service intent)
-   · /services/washing-machine  → "washing machine repair Sri Lanka"
-     (service intent)
+   · /services/inline-water-purifiers → "inline water purifier
+     installation & filter replacement Sri Lanka" (service intent)
+   · /services/bottle-water-dispensers → "water dispenser repair &
+     sanitization Sri Lanka" (service intent)
    · /services/maintenance-amc  → "appliance annual maintenance
      contract (AMC) Sri Lanka" (service intent)
+   · /products/[slug]           → transactional ("price", "buy")
    · /blog/*                    → long-tail informational
+
+   · /services/washing-machine  → retired from the menus (listed: false)
+     but still live so inbound links and search results don't break.
+
+   Cannibalization rule: service pages never target "price"/"buy";
+   product pages never target "repair"/"service".
    ============================================================ */
 export const serviceCatalog = [
   {
@@ -261,6 +318,8 @@ export const serviceCatalog = [
       "inverter AC repair",
     ],
     image: "/services/air-conditioning.png",
+    imageAlt:
+      "TechNurture technician servicing a wall-mounted split air conditioner indoor unit",
     intro: {
       heading: "Cooling that stays efficient — and stays working.",
       body: [
@@ -298,7 +357,12 @@ export const serviceCatalog = [
       { n: "03", title: "Repair / Service", body: "Trained technicians repair or service to manufacturer standards." },
       { n: "04", title: "Support", body: "Ongoing maintenance keeps cooling efficient and reliable." },
     ],
-    related: ["refrigerator", "washing-machine", "maintenance-amc"],
+    related: [
+      "refrigerator",
+      "inline-water-purifiers",
+      "bottle-water-dispensers",
+      "maintenance-amc",
+    ],
   },
   {
     slug: "refrigerator",
@@ -319,6 +383,8 @@ export const serviceCatalog = [
       "refrigerator compressor repair",
     ],
     image: "/services/refrigerator.png",
+    imageAlt:
+      "TechNurture technician diagnosing the cooling system at the back of a refrigerator",
     intro: {
       heading: "Back to cold, before anything spoils.",
       body: [
@@ -356,9 +422,170 @@ export const serviceCatalog = [
       { n: "03", title: "Repair", body: "Genuine parts and the correct refrigerant, done right." },
       { n: "04", title: "Verify", body: "We confirm stable cooling before we leave." },
     ],
-    related: ["air-conditioning", "washing-machine", "maintenance-amc"],
+    related: [
+      "air-conditioning",
+      "inline-water-purifiers",
+      "bottle-water-dispensers",
+      "maintenance-amc",
+    ],
   },
   {
+    slug: "inline-water-purifiers",
+    icon: "water",
+    title: "Inline Water Purifiers",
+    h1: "Inline Water Purifier Installation & Service in Sri Lanka",
+    tagline: "Clean water at the tap, without a bulky unit on the counter.",
+    summary:
+      "Installation, filter replacement, sanitization and repair of inline water purifiers — RO, UV, UF and multi-stage systems for homes, offices and institutions.",
+    metaTitle: "Inline Water Purifier Installation & Filter Replacement in Sri Lanka",
+    metaDescription:
+      "Inline water purifier installation, filter replacement, sanitization and repair across Sri Lanka. RO, UV, UF and multi-stage systems serviced by trained TechNurture technicians — all major brands.",
+    keywords: [
+      "inline water purifier Sri Lanka",
+      "water purifier filter replacement",
+      "RO water purifier installation Sri Lanka",
+      "water purifier service Colombo",
+      "UV water purifier repair",
+    ],
+    image: "/services/inline-water-purifiers.png",
+    imageAlt:
+      "Inline water purifier servicing by TechNurture — installation, filter replacement and sanitization",
+    intro: {
+      heading: "Water you stop thinking about.",
+      body: [
+        "An inline purifier sits out of sight — under the sink or in the service duct — and treats water on its way to the tap. That is its advantage and its risk: because you never look at it, a spent cartridge or a fouled membrane can go unnoticed for months while quality quietly drops.",
+        "We install, service and repair RO, UV, UF and multi-stage systems for households, offices and institutions. Mains supply in much of Sri Lanka swings with the monsoon and with local hardness, so we set service intervals against your actual water and usage rather than a generic sticker on the housing.",
+        "We work on most major brands regardless of who installed the system, and fit genuine cartridges, membranes and lamps — the wrong-spec filter is the fastest way to shorten a pump's life.",
+      ],
+      highlights: [
+        "RO, UV, UF & multi-stage systems",
+        "Genuine filters & membranes",
+        "System sanitization",
+        "Water-quality inspection",
+        "Domestic, office & institutional",
+        "All major brands",
+      ],
+    },
+    offerings: [
+      {
+        title: "Installation",
+        body: "Correct sizing, placement and commissioning under the sink or in the service duct, with pressure and flow checked before we sign off.",
+      },
+      {
+        title: "Filter Replacement",
+        body: "Sediment and carbon cartridges, RO membranes, UV lamps and mineral stages replaced on schedule, before quality drops rather than after.",
+      },
+      {
+        title: "System Sanitization",
+        body: "Full flush and disinfection of housings, tubing and the storage tank to clear biofilm — the usual cause of an off taste in a system that tests otherwise clean.",
+      },
+      {
+        title: "Repairs & Troubleshooting",
+        body: "Low flow, leaks, noisy or short-cycling pumps, failed solenoids, TDS creep and taste or odour complaints diagnosed and fixed.",
+      },
+      {
+        title: "Water Quality Inspection",
+        body: "On-site testing so the recommendation is backed by your water, not an assumption about it.",
+      },
+      {
+        title: "Annual Maintenance Contracts",
+        body: "Scheduled visits, filter changes and priority support bundled into one predictable annual cost.",
+      },
+    ],
+    steps: [
+      { n: "01", title: "Test", body: "We check your water, pressure and usage before recommending anything." },
+      { n: "02", title: "Quote", body: "A clear specification and transparent pricing — no surprises on the invoice." },
+      { n: "03", title: "Install / Repair", body: "Trained technicians, genuine consumables, commissioned and flow-tested." },
+      { n: "04", title: "Maintain", body: "Scheduled filter changes and sanitization keep quality steady year-round." },
+    ],
+    related: [
+      "bottle-water-dispensers",
+      "air-conditioning",
+      "refrigerator",
+      "maintenance-amc",
+    ],
+  },
+  {
+    slug: "bottle-water-dispensers",
+    icon: "dispenser",
+    title: "Bottle Water Dispensers",
+    h1: "Bottle Water Dispenser Service & Repair in Sri Lanka",
+    tagline: "Sanitized, serviced and working — hot and cold, all day.",
+    summary:
+      "Installation, sanitization, cooling and heating repairs, preventive maintenance and spare-part replacement for bottled water dispensers in homes and workplaces.",
+    metaTitle: "Bottle Water Dispenser Repair & Sanitization in Sri Lanka",
+    metaDescription:
+      "Bottled water dispenser service, sanitization and repair across Sri Lanka — cooling and heating faults, leaks, taps and thermostats. Tank chlorination and bacterial disinfection by TechNurture.",
+    keywords: [
+      "water dispenser repair Sri Lanka",
+      "bottle water dispenser service",
+      "water dispenser sanitization Colombo",
+      "water cooler repair Sri Lanka",
+      "office water dispenser maintenance",
+    ],
+    image: "/services/bottle-water-dispensers.png",
+    imageAlt:
+      "Bottle water dispenser servicing by TechNurture — installation, sanitization and repair",
+    intro: {
+      heading: "The appliance everyone drinks from and nobody services.",
+      body: [
+        "A dispenser is the one appliance in an office that every person touches and no one is responsible for. Left alone, the internal tank grows biofilm, the cold side stops holding temperature, and the drip tray becomes the only part anyone ever cleans.",
+        "We service bottled dispensers for homes, offices, clinics and schools — tank chlorination and steam sanitization, bacterial disinfection, cooling and heating repairs, tap and thermostat replacement, and scheduled preventive visits.",
+        "Sanitization is the part worth insisting on. Wiping the outside does nothing for the reservoir, and in a shared workplace that reservoir is the whole point of the machine.",
+      ],
+      highlights: [
+        "Tank chlorination & steam sanitization",
+        "Bacterial disinfection",
+        "Cooling & heating repairs",
+        "Taps, thermostats & spare parts",
+        "Home, office & institutional",
+        "All major brands",
+      ],
+    },
+    offerings: [
+      {
+        title: "Installation",
+        body: "Placement, commissioning and a first sanitization cycle so the unit starts clean rather than merely new.",
+      },
+      {
+        title: "Sanitization & Cleaning",
+        body: "Tank chlorination, steam sanitization and bacterial disinfection of the reservoir, lines and taps — not just the visible surfaces.",
+      },
+      {
+        title: "Cooling & Heating Repairs",
+        body: "Compressor, thermostat, heating element and control faults on units that no longer hold cold or hot.",
+      },
+      {
+        title: "Preventive Maintenance",
+        body: "Scheduled visits that catch leaks, drips and failing taps before they reach the floor.",
+      },
+      {
+        title: "Spare Parts Replacement",
+        body: "Taps, valves, probes, thermostats and seals replaced with quality parts, matched to your model.",
+      },
+      {
+        title: "Annual Maintenance Contracts",
+        body: "Sanitization and servicing on a fixed schedule — the only way this appliance stays maintained in practice.",
+      },
+    ],
+    steps: [
+      { n: "01", title: "Inspect", body: "We assess the unit, its placement and how heavily it is used." },
+      { n: "02", title: "Quote", body: "Transparent pricing for the sanitization or repair before any work starts." },
+      { n: "03", title: "Service", body: "Sanitize, repair and replace parts, then run hot and cold to verify." },
+      { n: "04", title: "Schedule", body: "Set a recurring interval so it never drifts back out of maintenance." },
+    ],
+    related: [
+      "inline-water-purifiers",
+      "air-conditioning",
+      "refrigerator",
+      "maintenance-amc",
+    ],
+  },
+  {
+    /* Retired from the menus per the client's June brief, but kept live so
+       existing search results and inbound links don't break. See `listed`
+       in the header comment. */
+    listed: false,
     slug: "washing-machine",
     icon: "washer",
     title: "Washing Machine",
@@ -377,6 +604,8 @@ export const serviceCatalog = [
       "automatic washing machine repair",
     ],
     image: "/services/washing-machine.png",
+    imageAlt:
+      "TechNurture technician repairing a front-load washing machine",
     intro: {
       heading: "Laundry back to normal, fast.",
       body: [
@@ -423,10 +652,10 @@ export const serviceCatalog = [
     h1: "Home Appliance Maintenance & AMC in Sri Lanka",
     tagline: "Preventive care that turns surprise breakdowns into peace of mind.",
     summary:
-      "Scheduled preventive maintenance and Annual Maintenance Contracts for air conditioners, refrigerators and washing machines.",
+      "Scheduled preventive maintenance and Annual Maintenance Contracts for air conditioners, refrigerators, inline water purifiers, bottle water dispensers and washing machines.",
     metaTitle: "Appliance Annual Maintenance Contract (AMC) in Sri Lanka",
     metaDescription:
-      "Comprehensive and non-comprehensive AMC plans for air conditioners, refrigerators and washing machines in Sri Lanka. Scheduled preventive visits, priority support and lower long-term costs from TechNurture.",
+      "Comprehensive and non-comprehensive AMC plans in Sri Lanka for air conditioners, refrigerators, inline water purifiers and bottle water dispensers — scheduled visits, priority support, lower long-term costs.",
     keywords: [
       "appliance AMC Sri Lanka",
       "annual maintenance contract Sri Lanka",
@@ -435,11 +664,14 @@ export const serviceCatalog = [
       "preventive maintenance service",
     ],
     image: "/services/maintenance-amc.png",
+    imageAlt:
+      "TechNurture technician carrying out a scheduled preventive maintenance visit",
     intro: {
       heading: "The cheapest repair is the one you never need.",
       body: [
-        "Preventive maintenance is the key to maximizing performance, reducing downtime and extending the life of your appliances. Our Annual Maintenance Contracts make that preventive care automatic — with scheduled visits, servicing and priority support built in for your air conditioners, refrigerators and washing machines.",
+        "The cheapest repair really is the one you never need. An Annual Maintenance Contract turns preventive care into something that happens on a schedule instead of something you mean to get around to — scheduled visits, servicing and priority support for your air conditioners, refrigerators, inline water purifiers, bottle water dispensers and washing machines.",
         "Choose the coverage that fits: a fully-inclusive Comprehensive AMC, an economical Non-Comprehensive plan, or flexible On-Call service only when you need it.",
+        "Comprehensive and Non-Comprehensive contracts exclude major components — compressors, condensers, pressure pumps and anything else specified in your agreement. We spell those out in the contract rather than at the point of failure.",
       ],
       highlights: [
         "Comprehensive & non-comprehensive AMC",
@@ -472,7 +704,12 @@ export const serviceCatalog = [
       { n: "03", title: "Schedule", body: "Preventive visits are planned in advance so you never think about it." },
       { n: "04", title: "Relax", body: "Fewer breakdowns, longer appliance life and predictable costs." },
     ],
-    related: ["air-conditioning", "refrigerator", "washing-machine"],
+    related: [
+      "air-conditioning",
+      "refrigerator",
+      "inline-water-purifiers",
+      "bottle-water-dispensers",
+    ],
   },
 ];
 
@@ -480,11 +717,16 @@ export function getService(slug: string) {
   return serviceCatalog.find((s) => s.slug === slug);
 }
 
+/* Services that appear in the header drop-down, the footer menu and the
+   /services grid. Retired services (`listed: false`) keep their page but
+   drop out of every list — see the `listed` note at the top of this file. */
+export const listedServices = serviceCatalog.filter((s) => s.listed !== false);
+
 export const whyChoose = {
   eyebrow: "Why TechNurture",
   heading: "Reasons customers trust us",
   cards: [
-    { title: "Experienced Technical Team", body: "Qualified technicians with extensive hands-on experience across air conditioning, refrigeration and laundry appliances." },
+    { title: "Experienced Technical Team", body: "Qualified technicians with extensive hands-on experience in air conditioning, refrigeration, water purification systems, and clean water dispensing equipment." },
     { title: "Fast Response", body: "Prompt support to minimize downtime and inconvenience for homes and businesses." },
     { title: "Preventive Maintenance", body: "Scheduled inspections that prevent costly, unexpected breakdowns before they happen." },
     { title: "Island-Wide Coverage", body: "Professional service wherever your home or business operates across Sri Lanka." },
@@ -497,15 +739,19 @@ export const process = {
   eyebrow: "How We Work",
   heading: "A simple, transparent service journey",
   steps: [
-    { n: "01", title: "Contact our team", body: "Reach us by phone, WhatsApp or the website inquiry form to tell us what you need." },
-    { n: "02", title: "On-site diagnosis", body: "We assess your appliance and the fault on-site or remotely, and explain it plainly." },
-    { n: "03", title: "Customized quotation", body: "Receive a clear, tailored solution and transparent pricing — no surprises." },
-    { n: "04", title: "Professional repair", body: "Trained technicians repair or service your appliance with genuine parts." },
-    { n: "05", title: "Ongoing support", body: "Preventive maintenance and responsive support throughout the life of your appliance." },
+    { n: "01", title: "Contact our team", body: "Reach us by phone, WhatsApp, email or the website to request installation or technical support." },
+    { n: "02", title: "Choose your service option", body: "Our technicians can come to you, or you can bring the appliance to our service centre for diagnosis and repair." },
+    { n: "03", title: "Inspection & diagnosis", body: "We inspect the appliance, identify the fault and recommend the repair or maintenance that actually fits it." },
+    { n: "04", title: "Customized quotation", body: "A transparent quotation covering the work, the replacement parts and how long it will take." },
+    { n: "05", title: "Professional installation or repair", body: "Certified technicians carry out the work using approved procedures and quality spare parts." },
+    { n: "06", title: "Testing & quality assurance", body: "Every appliance is tested for safe operation and proper performance before it goes back to you." },
+    { n: "07", title: "Collection, delivery & ongoing support", body: "Collect from our service centre or arrange delivery — then ongoing technical support and flexible AMC options." },
   ],
 };
 
-/* ---- Blog: 5 posts, balanced across the service pillars ---- */
+/* ---- Blog: 6 posts, balanced across the service pillars.
+   Declared in any order and sorted newest-first below, so adding a post
+   never depends on inserting it in the right place. ---- */
 export const posts = [
   {
     slug: "signs-your-air-conditioner-needs-repair",
@@ -541,19 +787,39 @@ export const posts = [
     ],
   },
   {
-    slug: "washing-machine-not-spinning-or-draining",
-    title: "Washing Machine Not Spinning or Draining? Here's Why",
+    slug: "how-often-should-an-inline-water-purifier-be-serviced",
+    title: "How Often Should an Inline Water Purifier Be Serviced?",
     excerpt:
-      "No spin, no drain, or water left in the drum — the usual culprits behind the most common washing-machine faults.",
-    date: "2026-06-26",
+      "Service intervals, the warning signs worth acting on, and why the sticker on the housing is usually wrong for Sri Lankan water.",
+    date: "2026-08-05",
     readTime: "5 min read",
-    category: "Washing Machine",
-    image: "/blog/washing-machine-repair.png",
+    category: "Inline Water Purifiers",
+    image: "/blog/water-purifier-service.png",
     body: [
-      "If your washing machine won't spin or drain, the water left in the drum usually points to a blocked drain pump, a clogged filter, a kinked drain hose or a worn drive belt. On automatic machines, a faulty door lock or control board can also stop the cycle.",
-      "Before calling for service, check the drain filter (usually behind a small panel at the front) and make sure the drain hose isn't blocked or pushed too far into the standpipe. Clearing lint and debris solves a surprising number of 'won't drain' cases.",
-      "Persistent no-spin faults are often the motor carbon brushes, the drive belt, the door-lock switch or the main PCB. Loud banging on spin usually means worn drum bearings — a bigger job best handled by a technician before it damages the drum.",
-      "We repair front-load, top-load and fully-automatic washing machines of all major brands, diagnose error codes, and fit genuine parts. Every repair is tested with a full cycle so you know it's truly fixed.",
+      "As a general rule, an inline water purifier needs servicing every three to six months. The honest answer is that the interval depends on your water source and how much you use — a household on a borehole in Kurunegala and an office on treated mains in Colombo 07 will not run the same schedule, even with identical hardware.",
+      "The reason people get this wrong is that an inline system is invisible. It sits under the sink or in a service duct, it has no display, and nothing announces that the carbon stage stopped adsorbing six weeks ago. Unlike a countertop unit you look at every day, there is no visual cue at all — which is exactly why a fixed calendar interval matters more here, not less.",
+      "Watch for the signs that the interval is too long: reduced flow at the tap, an unusual taste or odour, visible leakage at a housing, unusual sounds from the pump, or a filter-replacement indicator you have been ignoring. Any one of these is worth an inspection rather than a wait-and-see.",
+      "Each stage has its own life. Sediment and carbon cartridges are the fast-moving consumables. RO membranes last considerably longer but fail expensively if the pre-filters ahead of them were neglected — most premature membrane failures we see are really pre-filter failures. UV lamps are the trap: a UV lamp keeps glowing well past the point where its output has dropped below the dose that actually kills anything, so it must be replaced on hours, not on whether it lights up.",
+      "Sanitization is the step most schedules skip. Replacing cartridges in a housing that has grown biofilm puts a clean filter into a dirty system. If your water tests fine but still tastes off, biofilm in the tubing or storage tank is the usual explanation, and a full flush and disinfection is what fixes it.",
+      "We service RO, UV, UF and multi-stage systems across Sri Lanka regardless of who installed them, fit genuine cartridges and membranes, and can arrange water-quality testing so the schedule is set against your actual supply. If you would rather not track it at all, an Annual Maintenance Contract puts the visits and the filter changes on a fixed cycle.",
+    ],
+  },
+  {
+    slug: "why-your-water-dispenser-needs-sanitizing",
+    title: "Why Your Water Dispenser Needs Sanitizing, Not Just Wiping",
+    excerpt:
+      "The reservoir nobody cleans, what grows in it, and how often a shared office dispenser really needs professional sanitization.",
+    date: "2026-07-29",
+    readTime: "4 min read",
+    category: "Bottle Water Dispensers",
+    image: "/blog/bottle-water-dispenser-sanitization.jpg",
+    body: [
+      "A bottled water dispenser is the one appliance in an office that everybody drinks from and nobody owns. The drip tray gets emptied, the outside gets wiped, and the internal reservoir — the part the water actually sits in — goes untouched for years.",
+      "That reservoir is warm at the top, cool at the bottom, permanently wet and open to room air every time a bottle is changed. It is close to ideal conditions for biofilm: a slick bacterial layer on the tank walls and the internal tubing that no amount of external cleaning reaches. Once established, it re-seeds every fresh bottle you load.",
+      "The tell-tale signs are easy to dismiss individually. A faint taste that only some people notice. A slight film on the tap. Cold water that no longer feels properly cold. Water pooling under the unit. None of them looks urgent, which is precisely why dispensers tend to go a very long time between real services.",
+      "Professional sanitization is a different job from cleaning. It means draining the unit, chlorinating and steam-sanitizing the tank, disinfecting the internal lines and taps, flushing thoroughly, and then verifying that the cold and hot sides still hold temperature. In a shared workplace we recommend it every three to six months — more often in a clinic, a school or a food-handling environment.",
+      "Sanitization is also the moment to catch the mechanical faults: a thermostat drifting out of range, a heating element on its way out, a perished tap seal, a compressor working harder than it should. All of them are cheaper to address at a scheduled visit than as an emergency call.",
+      "We service bottled dispensers for homes, offices, clinics and schools across Sri Lanka — tank chlorination and steam sanitization, bacterial disinfection, cooling and heating repairs, and spare-part replacement. Most customers put it on an Annual Maintenance Contract, because in practice this is the appliance that only stays maintained when somebody else is tracking it.",
     ],
   },
   {
@@ -590,17 +856,17 @@ export const posts = [
       "Finally, book a periodic professional service. Reactive repairs are almost always more expensive, more disruptive and more urgent than planned maintenance — which is exactly what an Annual Maintenance Contract is designed to prevent.",
     ],
   },
-];
+].sort((a, b) => b.date.localeCompare(a.date));
 
 /* ---- FAQ ---- */
 export const faqs = [
   {
     q: "How often should home appliances be serviced?",
-    a: "As a guide: air conditioners every 3–6 months, refrigerators once a year, and washing machines whenever performance drops. Regular maintenance keeps appliances efficient and prevents breakdowns.",
+    a: "As a guide: air conditioners every 3–6 months, refrigerators once a year, inline water purifiers depending on your water source and consumption — generally every 3–6 months — and bottle water dispensers every 3–6 months. Regular maintenance keeps appliances efficient and prevents breakdowns.",
   },
   {
     q: "Which appliance brands do you repair?",
-    a: "We repair all major brands of air conditioners, refrigerators, freezers and washing machines — regardless of who originally supplied or installed the unit.",
+    a: "We repair all major brands of air conditioners, refrigerators, freezers, inline water purifiers, bottle water dispensers and washing machines — regardless of who originally supplied or installed the unit.",
   },
   {
     q: "Can you service equipment installed by another company?",
@@ -642,7 +908,7 @@ export const trustCards = [
 export const servicePlans = {
   eyebrow: "AMC & Service Plans",
   heading: "Tailored care for your home appliances",
-  sub: "Keep your air conditioners, refrigerators and washing machines performing at their best with our flexible Annual Maintenance Contracts (AMC) and on-demand services.",
+  sub: "Keep your air conditioners, refrigerators, inline water purifiers and bottle water dispensers performing at their best with our flexible Annual Maintenance Contracts (AMC) and on-demand services.",
   plans: [
     {
       id: "comprehensive",
@@ -651,12 +917,15 @@ export const servicePlans = {
       featured: false,
       priceLabel: "Maximum protection with predictable, fixed maintenance costs for critical operations.",
       points: [
+        "24/7 emergency assistance",
+        "Complete service & breakdown history",
         "Scheduled preventive maintenance",
-        "Routine inspections & servicing",
+        "Unlimited emergency breakdown call-outs",
         "Labour charges included",
-        "Eligible spare parts replaced",
-        "Breakdown & priority support",
+        "Eligible spare parts replacement included",
+        "Priority service support",
       ],
+      note: "Excludes major components — compressors, condensers, pressure pumps and anything else specified in the agreement.",
       cta: "Enquire about Comprehensive",
     },
     {
@@ -666,12 +935,15 @@ export const servicePlans = {
       featured: true,
       priceLabel: "Professional servicing and technical support, with replacement parts managed separately.",
       points: [
+        "24/7 emergency assistance",
+        "Complete service & breakdown history",
         "Scheduled preventive maintenance",
-        "Routine inspections & servicing",
+        "Unlimited emergency breakdown call-outs",
         "Labour charges included",
-        "Technical support",
-        "Performance checks",
+        "Spare parts charged separately",
+        "Priority service support",
       ],
+      note: "Spare parts, consumables and major component replacements are quoted separately.",
       cta: "Enquire about Non-Comprehensive",
     },
     {
@@ -681,12 +953,14 @@ export const servicePlans = {
       featured: false,
       priceLabel: "Service support only when you need it — ideal for occasional requirements.",
       points: [
-        "Service visits on request",
-        "Breakdown troubleshooting",
-        "Equipment inspections",
-        "Repair recommendations",
-        "Inspection fee deductible",
+        "24/7 emergency assistance",
+        "Complete service & breakdown history",
+        "Preventive maintenance reminders",
+        "Emergency breakdown call-out visits",
+        "Labour and spare parts charged per visit",
+        "No annual service contract required",
       ],
+      note: "A reported breakdown may need an inspection before repairs. The charge is agreed in advance and deducted from the final invoice if the repair goes ahead with us.",
       cta: "Enquire about On-Call Service",
     },
   ],

@@ -8,7 +8,7 @@ import { site } from "@/lib/site";
 export const metadata: Metadata = {
   title: "Book a Service",
   description:
-    "Book an air conditioning, refrigerator or washing machine service online — pick your service, district, date and preferred time. Island-wide across Sri Lanka, fast confirmation.",
+    "Book an air conditioning, refrigerator, water purifier or dispenser service online — pick your service, district, date and preferred time. Island-wide across Sri Lanka, fast confirmation.",
   alternates: { canonical: "/book" },
 };
 

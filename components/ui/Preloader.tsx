@@ -1,34 +1,25 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { usePathname } from "next/navigation";
 import * as THREE from "three";
 import gsap from "gsap";
 
-/* The welcome sequence belongs to the homepage alone — every other page should
-   load straight into its content (and never have its scroll locked for it).
+/* The welcome overlay. Whether it runs at all is decided in
+   components/ui/PreloaderGate.tsx, which lazy-loads this module — keeping
+   three.js off every route that never shows it.
 
-   The decision is taken once, when the site layout mounts, so it follows the
-   page the visitor actually landed on. The layout survives client-side
-   navigation, which means coming back to / later never replays the intro. */
-export default function Preloader() {
-  const pathname = usePathname();
-  const [enabled] = useState(() => pathname === "/");
+   Two hard rules, both learned the hard way:
+     · `finish()` is idempotent and is ALSO reached by a wall-clock timeout,
+       because Chrome pauses requestAnimationFrame in a background tab. Without
+       that, opening the site in a new tab left a permanent black screen with
+       document scroll locked once the GSAP onComplete never fired.
+     · body overflow is restored in the effect cleanup as well as on finish,
+       so unmounting mid-sequence can never strand a locked page. */
 
-  useEffect(() => {
-    if (enabled) return;
-    /* No intro on this load, so release anything waiting on it right away —
-       the hero holds its entrance animation until this fires. */
-    (
-      window as unknown as { __preloaderComplete?: boolean }
-    ).__preloaderComplete = true;
-    window.dispatchEvent(new Event("preloaderComplete"));
-  }, [enabled]);
+const SEQUENCE = 1.6; // seconds of morph/counter — was 4.0, which pushed LCP past 7s
+const HARD_STOP_MS = 6000; // absolute ceiling: never hold the page longer than this
 
-  return enabled ? <PreloaderOverlay /> : null;
-}
-
-function PreloaderOverlay() {
+export default function PreloaderOverlay() {
   const [progress, setProgress] = useState(0);
   
   const containerRef = useRef<HTMLDivElement>(null);
@@ -41,11 +32,27 @@ function PreloaderOverlay() {
     // Disable scrolling during load
     document.body.style.overflow = "hidden";
 
-    // Preload video in the background
-    const videoReq = new XMLHttpRequest();
-    videoReq.open("GET", "/hero-particles.mp4", true);
-    videoReq.responseType = "blob";
-    videoReq.send();
+    /* Release the page exactly once, however we got here — timeline finished,
+       tab was backgrounded, or the component unmounted. */
+    let released = false;
+    const finish = () => {
+      if (released) return;
+      released = true;
+      document.body.style.overflow = "";
+      (
+        window as unknown as { __preloaderComplete?: boolean }
+      ).__preloaderComplete = true;
+      window.dispatchEvent(new Event("preloaderComplete"));
+    };
+
+    /* rAF is throttled to a standstill in hidden tabs, so the GSAP timeline
+       driving the exit may never complete. Cmd-click, open-in-new-tab, session
+       restore and every headless audit hit this path. */
+    const hardStop = window.setTimeout(finish, HARD_STOP_MS);
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden") finish();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
 
     // Setup Three.js WebGL Particle Morph
     let renderer: THREE.WebGLRenderer;
@@ -54,6 +61,7 @@ function PreloaderOverlay() {
     let points: THREE.Points;
     let material: THREE.ShaderMaterial;
     let animationFrameId: number;
+    let disposeScene: (() => void) | undefined;
 
     const count = 8000; // Increased particle count for premium density and detail
 
@@ -229,15 +237,7 @@ function PreloaderOverlay() {
       const loadingTimeline = gsap.timeline({
         onComplete: () => {
           // Trigger exit sequence
-          const exitTl = gsap.timeline({
-            onComplete: () => {
-              // Enable scroll
-              document.body.style.overflow = "";
-              // Set global loading complete flag
-              (window as any).__preloaderComplete = true;
-              window.dispatchEvent(new Event("preloaderComplete"));
-            },
-          });
+          const exitTl = gsap.timeline({ onComplete: finish });
 
           exitTl
             .to([textRef.current, counterRef.current, progressLineRef.current], {
@@ -264,7 +264,7 @@ function PreloaderOverlay() {
         material.uniforms.uProgress,
         {
           value: 2.0,
-          duration: 4.0,
+          duration: SEQUENCE,
           ease: "power2.inOut",
         },
         0
@@ -275,7 +275,7 @@ function PreloaderOverlay() {
         progressObj,
         {
           value: 100,
-          duration: 4.0,
+          duration: SEQUENCE,
           ease: "power1.inOut",
           onUpdate: () => {
             setProgress(Math.round(progressObj.value));
@@ -284,22 +284,25 @@ function PreloaderOverlay() {
         0
       );
 
-      // Cleanup
-      return () => {
+      disposeScene = () => {
         window.removeEventListener("resize", handleResize);
         cancelAnimationFrame(animationFrameId);
-
-        // Geometries
         geometry.dispose();
-        // Materials
         material.dispose();
-        // Renderer
         renderer.dispose();
         if (renderer.domElement && renderer.domElement.parentNode) {
           renderer.domElement.parentNode.removeChild(renderer.domElement);
         }
       };
     }
+
+    return () => {
+      window.clearTimeout(hardStop);
+      document.removeEventListener("visibilitychange", onVisibility);
+      disposeScene?.();
+      // Never leave the page scroll-locked behind us.
+      document.body.style.overflow = "";
+    };
   }, []);
 
   // Update visual bar width

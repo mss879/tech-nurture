@@ -51,6 +51,9 @@ export default function Header({ embedded = false }: { embedded?: boolean }) {
         alt="TechNurture"
         width={440}
         height={135}
+        /* Without `sizes` the browser preloaded the 1080px variant for a slot
+           that is never wider than 184 CSS px. */
+        sizes="(min-width: 1024px) 184px, (min-width: 640px) 157px, 131px"
         className="h-10 w-auto transition-all duration-300 sm:h-12 lg:h-14"
         priority
       />
@@ -67,8 +70,12 @@ export default function Header({ embedded = false }: { embedded?: boolean }) {
         if (children && children.length > 0) {
           return (
             <div key={item.href} className="group relative">
+              {/* The nav item IS the section's page — Services opens /services,
+                  which lists every service. The drop-down is a shortcut to the
+                  individual pages, opened on hover or keyboard focus. */}
               <Link
                 href={item.href}
+                aria-haspopup="true"
                 className={`eyebrow flex items-center gap-1 rounded-lg px-4 py-2 font-bold transition-colors ${
                   active ? "text-green" : "text-slate/75 hover:text-navy"
                 }`}

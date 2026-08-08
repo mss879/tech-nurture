@@ -1,7 +1,7 @@
 import SmoothScroll from "@/components/providers/SmoothScroll";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
-import Preloader from "@/components/ui/Preloader";
+import PreloaderGate from "@/components/ui/PreloaderGate";
 import Tracker from "@/components/analytics/Tracker";
 import ChatWidget from "@/components/ai/ChatWidget";
 import { ProductNavProvider } from "@/components/layout/ProductNav";
@@ -22,7 +22,7 @@ export default async function SiteLayout({
 
   return (
     <ProductNavProvider items={productNav}>
-      <Preloader />
+      <PreloaderGate />
       <SmoothScroll>
         <Header />
         <main>{children}</main>

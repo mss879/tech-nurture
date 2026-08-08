@@ -15,6 +15,8 @@ export const revalidate = 60;
 const categoryToService: Record<string, string> = {
   "Air Conditioning": "air-conditioning",
   Refrigerator: "refrigerator",
+  "Inline Water Purifiers": "inline-water-purifiers",
+  "Bottle Water Dispensers": "bottle-water-dispensers",
   "Washing Machine": "washing-machine",
   Maintenance: "maintenance-amc",
 };

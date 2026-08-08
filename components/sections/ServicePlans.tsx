@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 import { Check } from "lucide-react";
 import Reveal from "@/components/ui/Reveal";
@@ -101,6 +99,20 @@ export default function ServicePlans() {
                       </li>
                     ))}
                   </ul>
+
+                  {/* What the plan does NOT cover — stated up front rather
+                      than discovered at the point of failure. */}
+                  {plan.note && (
+                    <p
+                      className={`mt-6 border-t pt-4 text-xs leading-relaxed ${
+                        isFeatured
+                          ? "border-white/10 text-mist/55"
+                          : "border-slate/10 text-slate/55"
+                      }`}
+                    >
+                      {plan.note}
+                    </p>
+                  )}
 
                   {/* CTA Button */}
                   <Link

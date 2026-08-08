@@ -53,7 +53,9 @@ export async function POST(request: Request) {
       product_slug: product.slug,
       product_name: product.name,
       model: variant.model,
-      filtration: variant.filtration,
+      // order_items.filtration is a snapshot column on live order history,
+      // so it keeps its name even though the catalogue field is now generic.
+      filtration: variant.optionLabel,
       unit_price: variant.price,
       plus_vat: variant.plusVat,
       qty,

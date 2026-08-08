@@ -24,6 +24,11 @@ export default function CountUp({
     () => {
       const el = ref.current;
       if (!el) return;
+      /* The markup ships the FINAL number so the figure is real without JS and
+         readable by crawlers — the server HTML used to say "0+". Reset to zero
+         here (a layout effect, i.e. before paint) so the count-up still starts
+         from nothing. */
+      el.textContent = "0" + suffix;
       const obj = { v: 0 };
       gsap.to(obj, {
         v: to,
@@ -40,7 +45,8 @@ export default function CountUp({
 
   return (
     <span ref={ref} className={className}>
-      0{suffix}
+      {to}
+      {suffix}
     </span>
   );
 }

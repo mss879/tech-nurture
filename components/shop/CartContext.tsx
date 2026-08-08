@@ -15,6 +15,10 @@ export type CartItem = {
   model: string;
   // Free text: the admin types this per model, so it isn't limited to
   // UF/RO any more.
+  /* The variant's distinguishing label — "RO", "UF", "1.5 Ton". Named
+     `filtration` because it maps straight onto the order_items column of
+     that name, which holds live order history and so keeps its name; the
+     catalogue field it comes from is Variant.optionLabel. */
   filtration: string;
   category: string;
   image: string;

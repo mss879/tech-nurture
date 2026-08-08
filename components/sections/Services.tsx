@@ -1,22 +1,8 @@
 import Link from "next/link";
-import { AirVent, Refrigerator, WashingMachine, Wrench, ArrowUpRight, Check } from "lucide-react";
+import { Wrench, ArrowUpRight, Check } from "lucide-react";
 import Reveal from "@/components/ui/Reveal";
 import { services } from "@/lib/site";
-
-const iconMap: Record<string, React.ElementType> = {
-  air: AirVent,
-  fridge: Refrigerator,
-  washer: WashingMachine,
-  wrench: Wrench,
-};
-
-// map each homepage card to its dedicated service page
-const slugMap: Record<string, string> = {
-  air: "air-conditioning",
-  fridge: "refrigerator",
-  washer: "washing-machine",
-  wrench: "maintenance-amc",
-};
+import { serviceIcon } from "@/lib/service-icons";
 
 export default function Services() {
   return (
@@ -54,12 +40,11 @@ export default function Services() {
         {/* Three repair services in a row, Maintenance & AMC as a wide card below */}
         <div className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {services.cards.slice(0, 3).map((card, i) => {
-            const Icon = iconMap[card.icon] ?? Wrench;
-            const slug = slugMap[card.icon] ?? "";
+            const Icon = serviceIcon(card.icon);
             return (
               <Reveal key={card.title} delay={i * 0.08} as="div">
                 <Link
-                  href={`/services/${slug}`}
+                  href={card.href}
                   className="group relative flex h-full flex-col overflow-hidden rounded-[1.75rem] bg-mist-200 p-7 transition-colors duration-500 hover:bg-ink"
                 >
                   <div className="flex items-start justify-between">
@@ -76,7 +61,15 @@ export default function Services() {
                   <p className="mt-3 text-[0.95rem] leading-relaxed text-slate/60 transition-colors duration-500 group-hover:text-mist/65">
                     {card.body}
                   </p>
-                  <ul className="mt-6 grid grid-cols-2 gap-x-4 gap-y-2 border-t border-slate/10 pt-5 transition-colors duration-500 group-hover:border-white/10">
+                  {/* Two columns only when the labels are short enough to sit
+                      side by side — the water card's points are full phrases. */}
+                  <ul
+                    className={`mt-6 grid gap-y-2 border-t border-slate/10 pt-5 transition-colors duration-500 group-hover:border-white/10 ${
+                      card.points.some((p) => p.length > 22)
+                        ? "gap-x-0"
+                        : "grid-cols-2 gap-x-4"
+                    }`}
+                  >
                     {card.points.map((p) => (
                       <li
                         key={p}
@@ -100,7 +93,7 @@ export default function Services() {
         {services.cards[3] && (
           <Reveal as="div" delay={0.24} className="mt-5">
             <Link
-              href={`/services/${slugMap[services.cards[3].icon] ?? ""}`}
+              href={services.cards[3].href}
               className="group relative flex flex-col gap-7 overflow-hidden rounded-[1.75rem] bg-mist-200 p-7 transition-colors duration-500 hover:bg-ink lg:flex-row lg:items-center lg:gap-10 lg:p-9"
             >
               {/* left — icon + title + body */}

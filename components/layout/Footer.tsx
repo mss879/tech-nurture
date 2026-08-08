@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Phone, Mail, MapPin, MessageCircle } from "lucide-react";
-import { nav, site, creator, serviceCatalog, whatsappLink } from "@/lib/site";
+import { nav, site, creator, listedServices, whatsappLink } from "@/lib/site";
 import SocialLinks from "@/components/layout/SocialLinks";
 
 export default function Footer() {
@@ -59,8 +59,8 @@ export default function Footer() {
             </div>
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-white/55">
               {site.tagline}. Expert repair and maintenance for air
-              conditioners, refrigerators and washing machines — a subsidiary
-              of {site.parent}.
+              conditioners, refrigerators, inline water purifiers and bottle
+              water dispensers — a subsidiary of {site.parent}.
             </p>
             <SocialLinks className="mt-6" />
           </div>
@@ -84,7 +84,7 @@ export default function Footer() {
           <div>
             <p className="eyebrow text-white/40">Services</p>
             <ul className="mt-4 space-y-2.5 text-sm">
-              {serviceCatalog.map((s) => (
+              {listedServices.map((s) => (
                 <li key={s.slug}>
                   <Link
                     href={`/services/${s.slug}`}
@@ -94,14 +94,6 @@ export default function Footer() {
                   </Link>
                 </li>
               ))}
-              <li>
-                <Link
-                  href="/services"
-                  className="text-white/70 transition hover:text-lime"
-                >
-                  All Services
-                </Link>
-              </li>
             </ul>
           </div>
 
@@ -147,9 +139,12 @@ export default function Footer() {
             className="group flex items-center gap-1.5 transition text-white/50 hover:text-lime"
           >
             <span>Designed &amp; created by</span>
-            <img
+            <Image
               src={creator.logo}
               alt={`${creator.name} — ${creator.tagline}`}
+              width={70}
+              height={36}
+              loading="lazy"
               className="h-8 w-auto opacity-80 transition group-hover:opacity-100 translate-y-0.5"
             />
           </a>

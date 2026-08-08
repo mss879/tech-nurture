@@ -1,6 +1,7 @@
 import { getServerSupabase } from "@/lib/supabase/server";
 import { isMissingSchema } from "@/lib/admin/db";
 import type { Category, Feature, Product, Tag, Variant } from "./products";
+import { sanitizeHtml } from "./rich-text";
 
 /* Server-only reads of the shop catalogue.
 
@@ -13,18 +14,66 @@ import type { Category, Feature, Product, Tag, Variant } from "./products";
    simply comes up empty instead of throwing. */
 
 const PRODUCT_SELECT = `
-  id, slug, name, series, form, blurb, images, pdf_url, features, specs,
-  is_published, position,
+  id, slug, name, subtitle, series, blurb, description,
+  meta_title, meta_description, key_features, why_choose, perfect_for,
+  images, features, specs, is_published, position,
   product_categories ( id, name, slug ),
-  product_variants ( model, filtration, recommended_for, filter_stages, price, plus_vat, position ),
+  product_brands ( id, name, slug ),
+  product_variants ( model, option_label, price, plus_vat, position ),
   product_tag_links ( product_tags ( id, name, slug ) )
 `;
 
+/* The column set as it existed before 019_product_content_fields.sql.
+
+   The shop must not go dark in the window between deploying this code and
+   running that migration, so every read tries the full set first and falls
+   back to this one when Postgres says a column doesn't exist. Products then
+   render exactly as they did before, just without the new fields. */
+const LEGACY_PRODUCT_SELECT = `
+  id, slug, name, series, blurb,
+  images, features, specs, is_published, position,
+  product_categories ( id, name, slug ),
+  product_variants ( model, filtration, price, plus_vat, position ),
+  product_tag_links ( product_tags ( id, name, slug ) )
+`;
+
+/* True when the failure is "this migration hasn't been run yet".
+
+   Wider than the shared isMissingSchema: asking for the product_brands
+   relationship before 019 exists fails with PGRST200 ("could not find a
+   relationship"), not with a missing-column code. Kept local rather than
+   added to lib/admin/db.ts, because that helper also gates the admin
+   permission fallback and widening it there could change who gets let in. */
+function isPreMigration(error: { code?: string } | null | undefined) {
+  return isMissingSchema(error) || error?.code === "PGRST200";
+}
+
+/* Normalises a pre-019 row into the shape toProduct expects. */
+function fromLegacy(row: Record<string, unknown>): RawRow {
+  const variants = (row.product_variants as Record<string, unknown>[] | null) ?? [];
+  return {
+    ...(row as unknown as RawRow),
+    subtitle: null,
+    description: null,
+    meta_title: null,
+    meta_description: null,
+    key_features: [],
+    why_choose: [],
+    perfect_for: [],
+    product_brands: null,
+    product_variants: variants.map((v) => ({
+      model: String(v.model ?? ""),
+      option_label: (v.filtration as string | null) ?? null,
+      price: v.price as number | string | null,
+      plus_vat: v.plus_vat as boolean | null,
+      position: v.position as number | null,
+    })),
+  };
+}
+
 type RawVariant = {
   model: string;
-  filtration: string | null;
-  recommended_for: string | null;
-  filter_stages: string | null;
+  option_label: string | null;
   price: number | string | null;
   plus_vat: boolean | null;
   position: number | null;
@@ -34,11 +83,17 @@ type RawRow = {
   id: string;
   slug: string;
   name: string;
+  subtitle: string | null;
+  description: string | null;
+  meta_title: string | null;
+  meta_description: string | null;
+  key_features: unknown;
+  why_choose: unknown;
+  perfect_for: unknown;
+  product_brands: { id: string; name: string; slug: string } | null;
   series: string | null;
-  form: string | null;
   blurb: string | null;
   images: string[] | null;
-  pdf_url: string | null;
   features: unknown;
   specs: unknown;
   product_categories: { id: string; name: string; slug: string } | null;
@@ -52,9 +107,21 @@ function toFeatures(value: unknown): Feature[] {
     .filter((f): f is Record<string, unknown> => !!f && typeof f === "object")
     .map((f) => ({
       title: String(f.title ?? ""),
-      body: String(f.body ?? ""),
+      // A Highlight's explanation is rich text; sanitised again on the way
+      // out so an older row written before 019 can't render raw markup.
+      body: sanitizeHtml(String(f.body ?? "")),
     }))
     .filter((f) => f.title || f.body);
+}
+
+/* The plain bullet lists — Key Features, Why Choose, Perfect For. Stored as
+   a jsonb array of strings; tolerant of nulls and stray objects. */
+function toStringList(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((v) => (typeof v === "string" ? v : String((v as { text?: string })?.text ?? "")))
+    .map((v) => v.trim())
+    .filter(Boolean);
 }
 
 /* Stored as [{label, value}] because that's what the editor writes;
@@ -72,9 +139,7 @@ function toVariants(rows: RawVariant[] | null): Variant[] {
     .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
     .map((v) => ({
       model: v.model,
-      filtration: v.filtration ?? "",
-      recommendedFor: v.recommended_for ?? "",
-      filterStages: v.filter_stages ?? "",
+      optionLabel: v.option_label ?? "",
       price: Number(v.price ?? 0),
       plusVat: v.plus_vat === true,
     }));
@@ -89,15 +154,21 @@ function toProduct(row: RawRow): Product {
     id: row.id,
     slug: row.slug,
     name: row.name,
+    subtitle: row.subtitle ?? "",
+    brand: row.product_brands?.name ?? "",
     category: row.product_categories?.name ?? "",
     categorySlug: row.product_categories?.slug ?? null,
     series: row.series ?? "",
-    form: row.form ?? "",
     blurb: row.blurb ?? "",
     tags: tags.map((t) => t.name),
     tagSlugs: tags.map((t) => t.slug),
     images: row.images ?? [],
-    pdf: row.pdf_url ?? "",
+    description: sanitizeHtml(row.description),
+    metaTitle: row.meta_title ?? "",
+    metaDescription: row.meta_description ?? "",
+    keyFeatures: toStringList(row.key_features),
+    whyChoose: toStringList(row.why_choose),
+    perfectFor: toStringList(row.perfect_for),
     features: toFeatures(row.features),
     specs: toSpecs(row.specs),
     variants: toVariants(row.product_variants),
@@ -109,37 +180,60 @@ export async function getProducts(): Promise<Product[]> {
   const supabase = getServerSupabase();
   if (!supabase) return [];
 
-  const { data, error } = await supabase
-    .from("products")
-    .select(PRODUCT_SELECT)
-    .eq("is_published", true)
-    .order("position", { ascending: true })
-    .order("created_at", { ascending: true });
+  const query = (select: string) =>
+    supabase
+      .from("products")
+      .select(select)
+      .eq("is_published", true)
+      .order("position", { ascending: true })
+      .order("created_at", { ascending: true });
 
-  if (error) {
-    // 017 hasn't been run yet — an empty shop, not a crash.
-    if (!isMissingSchema(error)) console.error("products load failed:", error);
+  const { data, error } = await query(PRODUCT_SELECT);
+  if (!error) return (data as unknown as RawRow[]).map(toProduct);
+
+  if (isPreMigration(error)) {
+    // Either 019 hasn't been run (retry without its columns) or 017 hasn't
+    // either (the retry fails too, and the shop is simply empty).
+    const legacy = await query(LEGACY_PRODUCT_SELECT);
+    if (!legacy.error) {
+      return (legacy.data as unknown as Record<string, unknown>[])
+        .map(fromLegacy)
+        .map(toProduct);
+    }
     return [];
   }
-  return (data as unknown as RawRow[]).map(toProduct);
+
+  console.error("products load failed:", error);
+  return [];
 }
 
 export async function getProduct(slug: string): Promise<Product | null> {
   const supabase = getServerSupabase();
   if (!supabase) return null;
 
-  const { data, error } = await supabase
-    .from("products")
-    .select(PRODUCT_SELECT)
-    .eq("slug", slug)
-    .eq("is_published", true)
-    .maybeSingle();
+  const query = (select: string) =>
+    supabase
+      .from("products")
+      .select(select)
+      .eq("slug", slug)
+      .eq("is_published", true)
+      .maybeSingle();
 
-  if (error) {
-    if (!isMissingSchema(error)) console.error("product load failed:", error);
+  const { data, error } = await query(PRODUCT_SELECT);
+  if (!error) return data ? toProduct(data as unknown as RawRow) : null;
+
+  if (isPreMigration(error)) {
+    const legacy = await query(LEGACY_PRODUCT_SELECT);
+    if (!legacy.error) {
+      return legacy.data
+        ? toProduct(fromLegacy(legacy.data as unknown as Record<string, unknown>))
+        : null;
+    }
     return null;
   }
-  return data ? toProduct(data as unknown as RawRow) : null;
+
+  console.error("product load failed:", error);
+  return null;
 }
 
 /* Used by /api/orders to re-price a basket line from the real catalogue,

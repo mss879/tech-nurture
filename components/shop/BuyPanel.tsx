@@ -55,9 +55,11 @@ export default function BuyPanel({ product }: { product: Product }) {
                 {v.model}
               </span>
             </span>
-            <span className="mt-1.5 block text-xs text-slate-500">
-              {v.filtration} filtration — {v.recommendedFor}
-            </span>
+            {v.optionLabel && (
+              <span className="mt-1.5 block text-xs text-slate-500">
+                {v.optionLabel}
+              </span>
+            )}
             <span className="mt-2 block text-sm font-semibold text-slate-900">
               {formatLKR(v.price)}
               {v.plusVat && (
@@ -70,19 +72,6 @@ export default function BuyPanel({ product }: { product: Product }) {
         ))}
       </div>
 
-      {(variant.filterStages || variant.recommendedFor) && (
-        <div className="mt-5 rounded-xl bg-slate-50 px-4 py-3 text-xs leading-relaxed text-slate-500">
-          {variant.filterStages && (
-            <span className="font-semibold text-slate-700">
-              {variant.filterStages}
-            </span>
-          )}
-          {variant.filterStages && variant.recommendedFor && <br />}
-          {variant.recommendedFor &&
-            `Recommended for ${variant.recommendedFor.toLowerCase()}.`}
-        </div>
-      )}
-
       <button
         onClick={() => {
           if (inCart) {
@@ -94,7 +83,7 @@ export default function BuyPanel({ product }: { product: Product }) {
             slug: product.slug,
             name: product.name,
             model: variant.model,
-            filtration: variant.filtration,
+            filtration: variant.optionLabel,
             category: product.category,
             image: product.images[0] ?? "",
             price: variant.price,

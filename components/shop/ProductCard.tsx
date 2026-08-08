@@ -80,7 +80,7 @@ export default function ProductCard({ product }: { product: Product }) {
                   {v.model}
                 </span>
                 <span className="block text-[0.65rem] text-slate-400">
-                  {v.filtration} · {v.recommendedFor}
+                  {v.optionLabel}
                 </span>
               </button>
             ))}
@@ -117,7 +117,7 @@ export default function ProductCard({ product }: { product: Product }) {
                   slug: product.slug,
                   name: product.name,
                   model: variant.model,
-                  filtration: variant.filtration,
+                  filtration: variant.optionLabel,
                   category: product.category,
                   image: cover ?? "",
                   price: variant.price,

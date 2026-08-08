@@ -2,17 +2,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import { AirVent, Refrigerator, WashingMachine, Wrench, Check, ArrowUpRight, ArrowRight } from "lucide-react";
+import { Check, ArrowUpRight, ArrowRight } from "lucide-react";
 import PageHero from "@/components/layout/PageHero";
 import Reveal from "@/components/ui/Reveal";
 import { serviceCatalog, getService, site, whatsappLink } from "@/lib/site";
+import { serviceIcon } from "@/lib/service-icons";
+import ServiceAssurance from "@/components/sections/ServiceAssurance";
 
-const iconMap: Record<string, React.ElementType> = {
-  air: AirVent,
-  fridge: Refrigerator,
-  washer: WashingMachine,
-  wrench: Wrench,
-};
 
 export function generateStaticParams() {
   return serviceCatalog.map((s) => ({ slug: s.slug }));
@@ -49,7 +45,7 @@ export default async function ServicePage({
   const service = getService(slug);
   if (!service) notFound();
 
-  const Icon = iconMap[service.icon] ?? Wrench;
+  const Icon = serviceIcon(service.icon);
   const related = service.related
     .map((r) => getService(r))
     .filter(Boolean) as NonNullable<ReturnType<typeof getService>>[];
@@ -98,11 +94,14 @@ export default async function ServicePage({
           </div>
           <Reveal as="div" delay={0.1}>
             <div className="relative overflow-hidden rounded-[2rem] border border-black/[0.06] shadow-[0_20px_50px_-20px_rgba(5,47,67,0.15)] bg-mist-200">
+              {/* The LCP element on every service page. Without `sizes` a
+                  phone fetched the 1920px variant for a ~343px slot. */}
               <Image
                 src={service.image}
-                alt={service.title}
+                alt={service.imageAlt ?? service.title}
                 width={900}
                 height={600}
+                sizes="(max-width: 1024px) 100vw, 50vw"
                 className="h-[360px] w-full object-cover sm:h-[460px] transition-transform duration-700 hover:scale-105"
                 priority
               />
@@ -165,6 +164,9 @@ export default async function ServicePage({
         </div>
       </section>
 
+      {/* All-brands + on-site vs walk-in (from the client's services brief) */}
+      <ServiceAssurance />
+
       {/* Section 4 — related services (cross-links) + CTA */}
       <section className="bg-ink py-20 text-mist sm:py-28">
         <div className="mx-auto max-w-7xl px-6">
@@ -181,7 +183,7 @@ export default async function ServicePage({
 
           <div className="mt-10 grid gap-5 sm:grid-cols-2">
             {related.map((r, i) => {
-              const RIcon = iconMap[r.icon] ?? Wrench;
+              const RIcon = serviceIcon(r.icon);
               return (
                 <Reveal key={r.slug} delay={i * 0.06} as="div">
                   <Link

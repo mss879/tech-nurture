@@ -13,6 +13,7 @@ import {
   ChevronRight,
   Tags,
   FolderTree,
+  Building2,
   Eye,
   EyeOff,
 } from "lucide-react";
@@ -28,13 +29,13 @@ import {
 } from "./ui";
 import { useMe } from "./MeProvider";
 import { can } from "@/lib/admin/types";
+import RichText from "./RichText";
+import { SPEC_COLUMNS, whyChooseHeading } from "@/lib/products";
 
 type Variant = {
   id?: string;
   model: string;
-  filtration: string | null;
-  recommended_for: string | null;
-  filter_stages: string | null;
+  option_label: string | null;
   price: number;
   plus_vat: boolean;
   position: number;
@@ -50,43 +51,56 @@ type Category = {
 
 type Tag = { id: string; name: string; slug: string };
 
+type Brand = { id: string; name: string; slug: string; position: number };
+
 type Product = {
   id: string;
   slug: string;
   name: string;
+  subtitle: string | null;
   series: string | null;
-  form: string | null;
   blurb: string | null;
+  description: string | null;
+  meta_title: string | null;
+  meta_description: string | null;
+  key_features: string[] | null;
+  why_choose: string[] | null;
+  perfect_for: string[] | null;
   images: string[];
-  pdf_url: string | null;
   features: { title: string; body: string }[];
   specs: { label: string; value: string }[];
   is_published: boolean;
   position: number;
   category_id: string | null;
+  brand_id: string | null;
   product_variants: Variant[];
   product_tag_links: { tag_id: string }[];
 };
 
 type VariantForm = {
   model: string;
-  filtration: string;
-  recommendedFor: string;
-  filterStages: string;
+  /* "UF" / "RO" / "1.5 Ton" — what tells two models apart in the basket. */
+  optionLabel: string;
   price: string;
   plusVat: boolean;
 };
 
 type Form = {
   name: string;
+  subtitle: string;
   slug: string;
   series: string;
-  form: string;
   blurb: string;
+  description: string;
+  metaTitle: string;
+  metaDescription: string;
   categoryId: string;
+  brandId: string;
   tagIds: string[];
   images: string[];
-  pdfUrl: string;
+  keyFeatures: string[];
+  whyChoose: string[];
+  perfectFor: string[];
   features: { title: string; body: string }[];
   specs: { label: string; value: string }[];
   variants: VariantForm[];
@@ -95,23 +109,27 @@ type Form = {
 
 const emptyVariant: VariantForm = {
   model: "",
-  filtration: "",
-  recommendedFor: "",
-  filterStages: "",
+  optionLabel: "",
   price: "",
   plusVat: false,
 };
 
 const emptyForm: Form = {
   name: "",
+  subtitle: "",
   slug: "",
   series: "",
-  form: "",
   blurb: "",
+  description: "",
+  metaTitle: "",
+  metaDescription: "",
   categoryId: "",
+  brandId: "",
   tagIds: [],
   images: [],
-  pdfUrl: "",
+  keyFeatures: [],
+  whyChoose: [],
+  perfectFor: [],
   features: [],
   specs: [],
   variants: [{ ...emptyVariant }],
@@ -133,6 +151,7 @@ export default function ProductsView() {
   const [products, setProducts] = useState<Product[] | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
+  const [brands, setBrands] = useState<Brand[]>([]);
   const [error, setError] = useState<ApiError | Error | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -146,8 +165,10 @@ export default function ProductsView() {
 
   const [managingCategories, setManagingCategories] = useState(false);
   const [managingTags, setManagingTags] = useState(false);
+  const [managingBrands, setManagingBrands] = useState(false);
   const [newCategory, setNewCategory] = useState("");
   const [newTag, setNewTag] = useState("");
+  const [newBrand, setNewBrand] = useState("");
 
   const load = useCallback(async () => {
     setError(null);
@@ -156,10 +177,12 @@ export default function ProductsView() {
         products: Product[];
         categories: Category[];
         tags: Tag[];
+        brands: Brand[];
       }>("/api/admin/products");
       setProducts(data.products);
       setCategories(data.categories ?? []);
       setTags(data.tags ?? []);
+      setBrands(data.brands ?? []);
     } catch (e) {
       setError(e as Error);
     } finally {
@@ -188,22 +211,26 @@ export default function ProductsView() {
     setForm({
       name: product.name,
       slug: product.slug,
+      subtitle: product.subtitle ?? "",
       series: product.series ?? "",
-      form: product.form ?? "",
       blurb: product.blurb ?? "",
+      description: product.description ?? "",
+      metaTitle: product.meta_title ?? "",
+      metaDescription: product.meta_description ?? "",
+      keyFeatures: product.key_features ?? [],
+      whyChoose: product.why_choose ?? [],
+      perfectFor: product.perfect_for ?? [],
       categoryId: product.category_id ?? "",
+      brandId: product.brand_id ?? "",
       tagIds: (product.product_tag_links ?? []).map((l) => l.tag_id),
       images: product.images ?? [],
-      pdfUrl: product.pdf_url ?? "",
       features: product.features ?? [],
       specs: product.specs ?? [],
       variants: [...(product.product_variants ?? [])]
         .sort((a, b) => a.position - b.position)
         .map((v) => ({
           model: v.model,
-          filtration: v.filtration ?? "",
-          recommendedFor: v.recommended_for ?? "",
-          filterStages: v.filter_stages ?? "",
+          optionLabel: v.option_label ?? "",
           price: v.price != null ? String(v.price) : "",
           plusVat: v.plus_vat,
         })),
@@ -218,14 +245,20 @@ export default function ProductsView() {
     try {
       const payload = {
         name: form.name,
+        subtitle: form.subtitle,
         slug: form.slug || form.name,
         series: form.series,
-        form: form.form,
         blurb: form.blurb,
+        description: form.description,
+        metaTitle: form.metaTitle,
+        metaDescription: form.metaDescription,
+        keyFeatures: form.keyFeatures,
+        whyChoose: form.whyChoose,
+        perfectFor: form.perfectFor,
         categoryId: form.categoryId || null,
+        brandId: form.brandId || null,
         tagIds: form.tagIds,
         images: form.images,
-        pdfUrl: form.pdfUrl,
         features: form.features,
         specs: form.specs,
         variants: form.variants,
@@ -376,6 +409,57 @@ export default function ProductsView() {
     }
   };
 
+  const addBrand = async () => {
+    const name = newBrand.trim();
+    if (!name) return;
+    try {
+      await api("/api/admin/products/brands", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name }),
+      });
+      setNewBrand("");
+      await load();
+    } catch (e) {
+      toast((e as Error).message);
+    }
+  };
+
+  const renameBrand = async (brand: Brand, name: string) => {
+    const trimmed = name.trim();
+    if (!trimmed || trimmed === brand.name) return;
+    try {
+      await api("/api/admin/products/brands", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: brand.id, name: trimmed }),
+      });
+      await load();
+    } catch (e) {
+      toast((e as Error).message);
+    }
+  };
+
+  const removeBrand = async (brand: Brand) => {
+    const used = (products ?? []).filter((p) => p.brand_id === brand.id).length;
+    if (
+      !confirm(
+        used > 0
+          ? `${used} ${used === 1 ? "product is" : "products are"} under "${brand.name}". They'll stay in the shop but without a brand. Delete it?`
+          : `Delete the brand "${brand.name}"?`
+      )
+    )
+      return;
+    try {
+      await api(`/api/admin/products/brands?id=${brand.id}`, {
+        method: "DELETE",
+      });
+      await load();
+    } catch (e) {
+      toast((e as Error).message);
+    }
+  };
+
   const addTag = async () => {
     const name = newTag.trim();
     if (!name) return;
@@ -429,6 +513,12 @@ export default function ProductsView() {
                 className="inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2.5 text-sm font-medium text-slate-600 ring-1 ring-slate-200 transition hover:bg-slate-50"
               >
                 <FolderTree className="size-4" /> Categories
+              </button>
+              <button
+                onClick={() => setManagingBrands(true)}
+                className="inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2.5 text-sm font-medium text-slate-600 ring-1 ring-slate-200 transition hover:bg-slate-50"
+              >
+                <Building2 className="size-4" /> Brands
               </button>
               <button
                 onClick={() => setManagingTags(true)}
@@ -589,115 +679,108 @@ export default function ProductsView() {
           align="start"
           onClose={() => setEditor(null)}
         >
-          <div className="space-y-6">
-            <section className="grid gap-3 sm:grid-cols-2">
-              <div>
-                <label className={label}>Name *</label>
-                <input
-                  autoFocus
-                  value={form.name}
-                  onChange={(e) => upd("name", e.target.value)}
-                  placeholder="Lusako Inline Water Purifier"
-                  className={input}
-                />
-              </div>
+          <div className="space-y-7">
+            {/* ---- AUTO DETECTIONS ---- */}
+            <FormGroup
+              title="Auto detections"
+              hint="Worked out for you — change it only if you need a particular address."
+            >
               <div>
                 <label className={label}>Web address</label>
-                <input
-                  value={form.slug}
-                  onChange={(e) => upd("slug", e.target.value)}
-                  placeholder="left blank = made from the name"
-                  className={input}
-                />
+                <div className="flex items-center gap-1.5">
+                  <span className="shrink-0 text-sm text-slate-400">
+                    /products/
+                  </span>
+                  <input
+                    value={form.slug}
+                    onChange={(e) => upd("slug", e.target.value)}
+                    placeholder={
+                      form.name.trim()
+                        ? slugPreview(form.name)
+                        : "made from the product title"
+                    }
+                    className={input}
+                  />
+                </div>
+              </div>
+            </FormGroup>
+
+            {/* ---- DROP DOWNS ---- */}
+            <FormGroup title="Drop downs">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label className={label}>Category</label>
+                  <select
+                    value={form.categoryId}
+                    onChange={(e) => upd("categoryId", e.target.value)}
+                    className={input}
+                  >
+                    <option value="">No category</option>
+                    {categories.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className={label}>Brand</label>
+                  <select
+                    value={form.brandId}
+                    onChange={(e) => upd("brandId", e.target.value)}
+                    className={input}
+                  >
+                    <option value="">No brand</option>
+                    {brands.map((b) => (
+                      <option key={b.id} value={b.id}>
+                        {b.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
               <div>
-                <label className={label}>Category</label>
-                <select
-                  value={form.categoryId}
-                  onChange={(e) => upd("categoryId", e.target.value)}
-                  className={input}
-                >
-                  <option value="">No category</option>
-                  {categories.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className={label}>Series</label>
-                  <input
-                    value={form.series}
-                    onChange={(e) => upd("series", e.target.value)}
-                    className={input}
-                  />
-                </div>
-                <div>
-                  <label className={label}>Form</label>
-                  <input
-                    value={form.form}
-                    onChange={(e) => upd("form", e.target.value)}
-                    placeholder="Floor-standing"
-                    className={input}
-                  />
-                </div>
-              </div>
-              <div className="sm:col-span-2">
-                <label className={label}>Short description</label>
-                <textarea
-                  value={form.blurb}
-                  onChange={(e) => upd("blurb", e.target.value)}
-                  rows={2}
-                  placeholder="One or two sentences, shown on the shop card."
-                  className={`${input} resize-none`}
-                />
-              </div>
-            </section>
-
-            {/* tags */}
-            <section>
-              <h3 className="mb-2 text-sm font-semibold text-slate-800">Tags</h3>
-              {tags.length === 0 ? (
-                <p className="text-xs text-slate-400">
-                  No tags yet — create some under <strong>Tags</strong> and
-                  they&apos;ll become filters on the shop page.
-                </p>
-              ) : (
-                <div className="flex flex-wrap gap-2">
-                  {tags.map((t) => {
-                    const on = form.tagIds.includes(t.id);
-                    return (
-                      <button
-                        key={t.id}
-                        onClick={() =>
-                          upd(
-                            "tagIds",
+                <label className={label}>Tags</label>
+                {tags.length === 0 ? (
+                  <p className="text-xs text-slate-400">
+                    No tags yet — create some under <strong>Tags</strong>.
+                  </p>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {tags.map((t) => {
+                      const on = form.tagIds.includes(t.id);
+                      return (
+                        <button
+                          key={t.id}
+                          type="button"
+                          onClick={() =>
+                            upd(
+                              "tagIds",
+                              on
+                                ? form.tagIds.filter((x) => x !== t.id)
+                                : [...form.tagIds, t.id]
+                            )
+                          }
+                          className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${
                             on
-                              ? form.tagIds.filter((x) => x !== t.id)
-                              : [...form.tagIds, t.id]
-                          )
-                        }
-                        className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${
-                          on
-                            ? "bg-green text-white"
-                            : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"
-                        }`}
-                      >
-                        {t.name}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </section>
+                              ? "bg-green text-white"
+                              : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"
+                          }`}
+                        >
+                          {t.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </FormGroup>
 
-            {/* images */}
-            <section>
-              <h3 className="mb-2 text-sm font-semibold text-slate-800">
-                Photos
-              </h3>
+            {/* ---- PICTURES ---- */}
+            <FormGroup
+              title="Pictures"
+              hint="The first picture is the one shown on the shop card. Max 5 MB each."
+            >
               <div className="flex flex-wrap gap-3">
                 {form.images.map((url, i) => (
                   <div
@@ -706,21 +789,19 @@ export default function ProductsView() {
                   >
                     <Image
                       src={url}
-                      alt={`Photo ${i + 1}`}
+                      alt={`Picture ${i + 1}`}
                       fill
                       sizes="96px"
                       className="object-contain p-1.5"
                     />
-                    {i === 0 && (
-                      <span className="absolute left-1 top-1 rounded bg-ink/80 px-1.5 py-0.5 text-[0.55rem] font-semibold uppercase text-white">
-                        Main
-                      </span>
-                    )}
+                    <span className="absolute left-1 top-1 rounded bg-ink/80 px-1.5 py-0.5 text-[0.55rem] font-semibold uppercase text-white">
+                      {i === 0 ? "Main" : `Pic ${i + 1}`}
+                    </span>
                     <div className="absolute inset-x-0 bottom-0 flex justify-between bg-white/90 opacity-0 transition group-hover:opacity-100">
                       <button
                         onClick={() => moveImage(i, -1)}
                         disabled={i === 0}
-                        aria-label="Move photo earlier"
+                        aria-label="Move picture earlier"
                         className="grid size-6 place-items-center text-slate-500 disabled:opacity-25"
                       >
                         <ChevronLeft className="size-3.5" />
@@ -732,7 +813,7 @@ export default function ProductsView() {
                             form.images.filter((x) => x !== url)
                           )
                         }
-                        aria-label="Remove photo"
+                        aria-label="Remove picture"
                         className="grid size-6 place-items-center text-red-500"
                       >
                         <X className="size-3.5" />
@@ -740,7 +821,7 @@ export default function ProductsView() {
                       <button
                         onClick={() => moveImage(i, 1)}
                         disabled={i === form.images.length - 1}
-                        aria-label="Move photo later"
+                        aria-label="Move picture later"
                         className="grid size-6 place-items-center text-slate-500 disabled:opacity-25"
                       >
                         <ChevronRight className="size-3.5" />
@@ -770,18 +851,92 @@ export default function ProductsView() {
                   }}
                 />
               </div>
-              <p className="mt-2 text-xs text-slate-400">
-                The first photo is the one shown on the shop card. Max 5 MB each.
-              </p>
-            </section>
+            </FormGroup>
 
-            {/* variants */}
-            <section>
-              <div className="mb-2 flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-slate-800">
-                  Models &amp; prices
-                </h3>
+            {/* ---- TITLE ---- */}
+            <FormGroup title="Title">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label className={label}>Series</label>
+                  <input
+                    value={form.series}
+                    onChange={(e) => upd("series", e.target.value)}
+                    placeholder="2905"
+                    className={input}
+                  />
+                </div>
+                <div>
+                  <label className={label}>Product title *</label>
+                  <input
+                    autoFocus
+                    value={form.name}
+                    onChange={(e) => upd("name", e.target.value)}
+                    placeholder="AquaElite 3X"
+                    className={input}
+                  />
+                </div>
+              </div>
+              <div>
+                <label className={label}>Product sub title</label>
+                <input
+                  value={form.subtitle}
+                  onChange={(e) => upd("subtitle", e.target.value)}
+                  placeholder="Premium Countertop Hot, Cold & Normal Water Purifier"
+                  className={input}
+                />
+              </div>
+              <div>
+                <label className={label}>SEO meta title</label>
+                <input
+                  value={form.metaTitle}
+                  onChange={(e) => upd("metaTitle", e.target.value)}
+                  placeholder="LUSAKO AquaElite 3X Countertop Water Purifier | Hot, Cold & Normal Water"
+                  className={input}
+                />
+                <CharCount value={form.metaTitle} ideal={60} />
+              </div>
+            </FormGroup>
+
+            {/* ---- DESCRIPTION ---- */}
+            <FormGroup title="Description">
+              <div>
+                <label className={label}>Short description</label>
+                <textarea
+                  value={form.blurb}
+                  onChange={(e) => upd("blurb", e.target.value)}
+                  rows={3}
+                  placeholder="Two or three sentences, shown under the product title and on the shop card."
+                  className={`${input} resize-none`}
+                />
+              </div>
+              <div>
+                <label className={label}>Product description</label>
+                <RichText
+                  value={form.description}
+                  onChange={(html) => upd("description", html)}
+                  placeholder="The full description. Use headings and bullet lists to break it up."
+                />
+              </div>
+              <div>
+                <label className={label}>SEO meta description</label>
+                <textarea
+                  value={form.metaDescription}
+                  onChange={(e) => upd("metaDescription", e.target.value)}
+                  rows={3}
+                  placeholder="One or two sentences for the Google result."
+                  className={`${input} resize-none`}
+                />
+                <CharCount value={form.metaDescription} ideal={155} />
+              </div>
+            </FormGroup>
+
+            {/* ---- MODEL(S) ---- */}
+            <FormGroup
+              title="Model(s)"
+              hint="What a customer actually buys. Every basket is re-priced from here at checkout, so these are the prices that count."
+              action={
                 <button
+                  type="button"
                   onClick={() =>
                     upd("variants", [...form.variants, { ...emptyVariant }])
                   }
@@ -789,31 +944,41 @@ export default function ProductsView() {
                 >
                   <Plus className="size-3.5" /> Add model
                 </button>
-              </div>
-              <p className="mb-3 text-xs text-slate-400">
-                What a customer actually buys. Every basket is re-priced from
-                here at checkout, so these are the prices that count.
-              </p>
-              <div className="space-y-3">
+              }
+            >
+              <div className="space-y-2">
                 {form.variants.map((v, i) => (
                   <div
                     key={i}
-                    className="rounded-xl border border-slate-200 p-3"
+                    className="grid gap-2 rounded-xl border border-slate-200 p-3 sm:grid-cols-[1.3fr_1fr_1fr_auto] sm:items-center"
                   >
-                    <div className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
-                      <input
-                        value={v.model}
-                        onChange={(e) =>
-                          upd(
-                            "variants",
-                            form.variants.map((x, j) =>
-                              j === i ? { ...x, model: e.target.value } : x
-                            )
+                    <input
+                      value={v.model}
+                      onChange={(e) =>
+                        upd(
+                          "variants",
+                          form.variants.map((x, j) =>
+                            j === i ? { ...x, model: e.target.value } : x
                           )
-                        }
-                        placeholder="Model name *"
-                        className={input}
-                      />
+                        )
+                      }
+                      placeholder="Model code * — W2905-3CF"
+                      className={input}
+                    />
+                    <input
+                      value={v.optionLabel}
+                      onChange={(e) =>
+                        upd(
+                          "variants",
+                          form.variants.map((x, j) =>
+                            j === i ? { ...x, optionLabel: e.target.value } : x
+                          )
+                        )
+                      }
+                      placeholder="Label — UF / RO"
+                      className={input}
+                    />
+                    <div>
                       <input
                         value={v.price}
                         onChange={(e) =>
@@ -828,129 +993,84 @@ export default function ProductsView() {
                         placeholder="Price (Rs)"
                         className={input}
                       />
-                      <button
-                        onClick={() =>
-                          upd(
-                            "variants",
-                            form.variants.filter((_, j) => j !== i)
-                          )
-                        }
-                        aria-label="Remove this model"
-                        className="grid size-11 place-items-center rounded-xl text-slate-400 transition hover:bg-red-50 hover:text-red-500"
-                      >
-                        <Trash2 className="size-4" />
-                      </button>
+                      <label className="mt-1.5 flex cursor-pointer items-center gap-1.5 text-xs text-slate-500">
+                        <input
+                          type="checkbox"
+                          checked={v.plusVat}
+                          onChange={(e) =>
+                            upd(
+                              "variants",
+                              form.variants.map((x, j) =>
+                                j === i ? { ...x, plusVat: e.target.checked } : x
+                              )
+                            )
+                          }
+                          className="size-3.5 accent-green"
+                        />
+                        Before VAT
+                      </label>
                     </div>
-                    <div className="mt-2 grid gap-2 sm:grid-cols-3">
-                      <input
-                        value={v.filtration}
-                        onChange={(e) =>
-                          upd(
-                            "variants",
-                            form.variants.map((x, j) =>
-                              j === i ? { ...x, filtration: e.target.value } : x
-                            )
-                          )
-                        }
-                        placeholder="Filtration (UF / RO)"
-                        className={input}
-                      />
-                      <input
-                        value={v.recommendedFor}
-                        onChange={(e) =>
-                          upd(
-                            "variants",
-                            form.variants.map((x, j) =>
-                              j === i
-                                ? { ...x, recommendedFor: e.target.value }
-                                : x
-                            )
-                          )
-                        }
-                        placeholder="Recommended for"
-                        className={input}
-                      />
-                      <input
-                        value={v.filterStages}
-                        onChange={(e) =>
-                          upd(
-                            "variants",
-                            form.variants.map((x, j) =>
-                              j === i
-                                ? { ...x, filterStages: e.target.value }
-                                : x
-                            )
-                          )
-                        }
-                        placeholder="Filter stages"
-                        className={input}
-                      />
-                    </div>
-                    <label className="mt-2 flex cursor-pointer items-center gap-2 text-xs text-slate-600">
-                      <input
-                        type="checkbox"
-                        checked={v.plusVat}
-                        onChange={(e) =>
-                          upd(
-                            "variants",
-                            form.variants.map((x, j) =>
-                              j === i ? { ...x, plusVat: e.target.checked } : x
-                            )
-                          )
-                        }
-                        className="size-4 accent-green"
-                      />
-                      Price is before VAT
-                    </label>
+                    <button
+                      onClick={() =>
+                        upd(
+                          "variants",
+                          form.variants.filter((_, j) => j !== i)
+                        )
+                      }
+                      aria-label="Remove this model"
+                      className="grid size-11 place-items-center self-start rounded-xl text-slate-400 transition hover:bg-red-50 hover:text-red-500"
+                    >
+                      <Trash2 className="size-4" />
+                    </button>
                   </div>
                 ))}
               </div>
-            </section>
+            </FormGroup>
 
-            {/* features */}
-            <PairEditor
-              title="Highlights"
-              hint="Bullet points on the product page."
-              rows={form.features}
-              keys={["title", "body"]}
-              placeholders={["Headline", "Explanation"]}
-              onChange={(rows) =>
-                upd("features", rows as { title: string; body: string }[])
-              }
+            {/* ---- the content sections, in the sheet's order ---- */}
+            <BulletEditor
+              title="Key Features"
+              hint="One per line. Shown as a ticked list beside the product."
+              placeholder="Hot, Cold & Normal Purified Water"
+              items={form.keyFeatures}
+              onChange={(items) => upd("keyFeatures", items)}
             />
 
-            {/* specs */}
-            <PairEditor
-              title="Specification table"
-              hint="One row per line of the spec sheet."
+            <BulletEditor
+              title={whyChooseHeading(form.name.trim() || "this product")}
+              hint="The heading follows the product title automatically — rename the product and it updates."
+              placeholder="Clean and safe drinking water every day"
+              items={form.whyChoose}
+              onChange={(items) => upd("whyChoose", items)}
+            />
+
+            <BulletEditor
+              title="Perfect For"
+              hint="Where this product suits — homes, offices, clinics."
+              placeholder="Offices & Workplaces"
+              items={form.perfectFor}
+              onChange={(items) => upd("perfectFor", items)}
+            />
+
+            <SpecEditor
               rows={form.specs}
-              keys={["label", "value"]}
-              placeholders={["Capacity", "10 L/h"]}
-              onChange={(rows) =>
-                upd("specs", rows as { label: string; value: string }[])
-              }
+              onChange={(rows) => upd("specs", rows)}
             />
 
-            <section className="grid gap-3 sm:grid-cols-2">
-              <div>
-                <label className={label}>Spec sheet PDF link</label>
-                <input
-                  value={form.pdfUrl}
-                  onChange={(e) => upd("pdfUrl", e.target.value)}
-                  placeholder="https://…"
-                  className={input}
-                />
-              </div>
-              <label className="flex items-end gap-2.5 pb-2.5 text-sm text-slate-700">
-                <input
-                  type="checkbox"
-                  checked={form.isPublished}
-                  onChange={(e) => upd("isPublished", e.target.checked)}
-                  className="size-4 accent-green"
-                />
-                Show this product in the shop
-              </label>
-            </section>
+            <HighlightEditor
+              rows={form.features}
+              onChange={(rows) => upd("features", rows)}
+            />
+
+            <label className="flex cursor-pointer items-center gap-2.5 border-t border-slate-100 pt-5 text-sm text-slate-700">
+              <input
+                type="checkbox"
+                checked={form.isPublished}
+                onChange={(e) => upd("isPublished", e.target.checked)}
+                className="size-4 accent-green"
+              />
+              Show this product in the shop
+            </label>
           </div>
 
           <button
@@ -961,6 +1081,74 @@ export default function ProductsView() {
             {busy && <Loader2 className="size-4 animate-spin" />}
             {editor.mode === "add" ? "Create product" : "Save changes"}
           </button>
+        </Modal>
+      )}
+
+      {/* brands */}
+      {managingBrands && (
+        <Modal
+          title="Brands"
+          sub="Each product carries one brand. It shows on the product page and in its search-engine listing."
+          onClose={() => setManagingBrands(false)}
+        >
+          {brands.length === 0 ? (
+            <p className="text-sm text-slate-400">
+              No brands yet. If this stays empty after adding one, run{" "}
+              <strong>019_product_content_fields.sql</strong>.
+            </p>
+          ) : (
+            <ul className="space-y-2">
+              {brands.map((b) => {
+                const used = (products ?? []).filter(
+                  (p) => p.brand_id === b.id
+                ).length;
+                return (
+                  <li
+                    key={b.id}
+                    className="flex items-center gap-2 rounded-xl border border-slate-200 p-2.5"
+                  >
+                    <input
+                      defaultValue={b.name}
+                      onBlur={(e) => renameBrand(b, e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") e.currentTarget.blur();
+                      }}
+                      aria-label={`Rename ${b.name}`}
+                      className="min-w-0 flex-1 rounded-lg border border-transparent px-2.5 py-1.5 text-sm outline-none transition hover:border-slate-200 focus:border-green"
+                    />
+                    <span className="shrink-0 text-xs text-slate-400">
+                      {used}
+                    </span>
+                    <button
+                      onClick={() => removeBrand(b)}
+                      aria-label={`Delete ${b.name}`}
+                      className="grid size-7 shrink-0 place-items-center rounded-lg text-slate-400 transition hover:bg-red-50 hover:text-red-500"
+                    >
+                      <Trash2 className="size-3.5" />
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+          <div className="mt-4 flex gap-2">
+            <input
+              value={newBrand}
+              onChange={(e) => setNewBrand(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") addBrand();
+              }}
+              placeholder="New brand"
+              className={input}
+            />
+            <button
+              onClick={addBrand}
+              disabled={!newBrand.trim()}
+              className="shrink-0 rounded-xl bg-ink px-4 text-sm font-medium text-white transition hover:bg-slate-700 disabled:opacity-40"
+            >
+              Add
+            </button>
+          </div>
         </Modal>
       )}
 
@@ -1081,63 +1269,272 @@ export default function ProductsView() {
   );
 }
 
-/* Two-column repeating rows — used for both the highlights and the spec
-   table, which have the same shape. */
-function PairEditor({
+/* A titled block of the form. The titles mirror the client's Product.xlsx
+   so the person filling this in is looking at the same shape they wrote. */
+function FormGroup({
   title,
   hint,
-  rows,
-  keys,
-  placeholders,
+  action,
+  children,
+}: {
+  title: string;
+  hint?: string;
+  action?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <section>
+      <div className="mb-3 flex items-center justify-between gap-3 border-b border-slate-100 pb-2">
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+          {title}
+        </h3>
+        {action}
+      </div>
+      {hint && <p className="mb-3 text-xs text-slate-400">{hint}</p>}
+      <div className="space-y-3">{children}</div>
+    </section>
+  );
+}
+
+/* Length readout for the two SEO fields — green while it still fits. */
+function CharCount({ value, ideal }: { value: string; ideal: number }) {
+  const over = value.length > ideal;
+  return (
+    <p
+      className={`mt-1 text-xs ${over ? "text-amber-600" : "text-slate-400"}`}
+    >
+      {value.length} characters
+      {over ? ` — over ${ideal}, Google may cut it off` : ` of about ${ideal}`}
+    </p>
+  );
+}
+
+/* Mirrors lib/admin/slug.ts so the field can show what will be generated. */
+function slugPreview(name: string) {
+  return name
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+/* ---- Editors for the repeating sections of a product ------------
+   Three shapes, from the client's Product.xlsx:
+     · BulletEditor   — a plain list (Key Features, Why Choose, Perfect For)
+     · SpecEditor     — the Technical Specifications table
+     · HighlightEditor— a headline beside a rich-text explanation
+   ------------------------------------------------------------------ */
+
+/* A plain list of one-line bullets. Enter adds the next row, so a list can
+   be typed straight through without reaching for the mouse. */
+function BulletEditor({
+  title,
+  hint,
+  placeholder,
+  items,
   onChange,
 }: {
   title: string;
   hint: string;
-  rows: Record<string, string>[];
-  keys: [string, string];
-  placeholders: [string, string];
-  onChange: (rows: Record<string, string>[]) => void;
+  placeholder: string;
+  items: string[];
+  onChange: (items: string[]) => void;
 }) {
-  const set = (i: number, key: string, value: string) =>
-    onChange(rows.map((r, j) => (j === i ? { ...r, [key]: value } : r)));
+  const set = (i: number, value: string) =>
+    onChange(items.map((v, j) => (j === i ? value : v)));
 
   return (
     <section>
-      <div className="mb-2 flex items-center justify-between">
+      <div className="mb-2 flex items-center justify-between gap-3">
         <h3 className="text-sm font-semibold text-slate-800">{title}</h3>
         <button
-          onClick={() => onChange([...rows, { [keys[0]]: "", [keys[1]]: "" }])}
-          className="inline-flex items-center gap-1 text-xs font-medium text-green hover:underline"
+          type="button"
+          onClick={() => onChange([...items, ""])}
+          className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-green hover:underline"
+        >
+          <Plus className="size-3.5" /> Add
+        </button>
+      </div>
+      <p className="mb-2 text-xs text-slate-400">{hint}</p>
+      {items.length === 0 ? (
+        <p className="text-xs text-slate-300">Nothing added yet.</p>
+      ) : (
+        <div className="space-y-2">
+          {items.map((value, i) => (
+            <div key={i} className="flex gap-2">
+              <span className="mt-3 size-1.5 shrink-0 rounded-full bg-green/60" />
+              <input
+                value={value}
+                onChange={(e) => set(i, e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    onChange([
+                      ...items.slice(0, i + 1),
+                      "",
+                      ...items.slice(i + 1),
+                    ]);
+                  }
+                }}
+                placeholder={placeholder}
+                className={input}
+              />
+              <button
+                type="button"
+                onClick={() => onChange(items.filter((_, j) => j !== i))}
+                aria-label={`Remove "${value || "empty row"}"`}
+                className="grid size-11 shrink-0 place-items-center rounded-xl text-slate-400 transition hover:bg-red-50 hover:text-red-500"
+              >
+                <Trash2 className="size-4" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+/* The Technical Specifications table. Laid out as an actual table with the
+   brief's column headings, so the admin sees what the product page renders. */
+function SpecEditor({
+  rows,
+  onChange,
+}: {
+  rows: { label: string; value: string }[];
+  onChange: (rows: { label: string; value: string }[]) => void;
+}) {
+  const set = (i: number, key: "label" | "value", v: string) =>
+    onChange(rows.map((r, j) => (j === i ? { ...r, [key]: v } : r)));
+
+  return (
+    <section>
+      <div className="mb-2 flex items-center justify-between gap-3">
+        <h3 className="text-sm font-semibold text-slate-800">
+          Technical Specifications
+        </h3>
+        <button
+          type="button"
+          onClick={() => onChange([...rows, { label: "", value: "" }])}
+          className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-green hover:underline"
         >
           <Plus className="size-3.5" /> Add row
         </button>
       </div>
-      <p className="mb-2 text-xs text-slate-400">{hint}</p>
+      <p className="mb-2 text-xs text-slate-400">
+        One row per specification. Renders as a two-column table on the product
+        page.
+      </p>
       {rows.length === 0 ? (
         <p className="text-xs text-slate-300">Nothing added yet.</p>
       ) : (
-        <div className="space-y-2">
-          {rows.map((row, i) => (
-            <div key={i} className="grid gap-2 sm:grid-cols-[1fr_1.6fr_auto]">
-              <input
-                value={row[keys[0]] ?? ""}
-                onChange={(e) => set(i, keys[0], e.target.value)}
-                placeholder={placeholders[0]}
-                className={input}
-              />
-              <input
-                value={row[keys[1]] ?? ""}
-                onChange={(e) => set(i, keys[1], e.target.value)}
-                placeholder={placeholders[1]}
-                className={input}
-              />
-              <button
-                onClick={() => onChange(rows.filter((_, j) => j !== i))}
-                aria-label="Remove row"
-                className="grid size-11 place-items-center rounded-xl text-slate-400 transition hover:bg-red-50 hover:text-red-500"
+        <div className="overflow-hidden rounded-xl border border-slate-200">
+          <div className="grid grid-cols-[1fr_1.6fr_44px] items-center gap-2 border-b border-slate-200 bg-slate-50 px-2.5 py-2">
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+              {SPEC_COLUMNS[0]}
+            </span>
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+              {SPEC_COLUMNS[1]}
+            </span>
+            <span />
+          </div>
+          <div className="divide-y divide-slate-100">
+            {rows.map((row, i) => (
+              <div
+                key={i}
+                className="grid grid-cols-[1fr_1.6fr_44px] items-center gap-2 p-2"
               >
-                <Trash2 className="size-4" />
-              </button>
+                <input
+                  value={row.label}
+                  onChange={(e) => set(i, "label", e.target.value)}
+                  placeholder="Heating Power"
+                  className="w-full rounded-lg border border-transparent px-2.5 py-2 text-sm outline-none transition hover:border-slate-200 focus:border-green"
+                />
+                <input
+                  value={row.value}
+                  onChange={(e) => set(i, "value", e.target.value)}
+                  placeholder="420W"
+                  className="w-full rounded-lg border border-transparent px-2.5 py-2 text-sm outline-none transition hover:border-slate-200 focus:border-green"
+                />
+                <button
+                  type="button"
+                  onClick={() => onChange(rows.filter((_, j) => j !== i))}
+                  aria-label={`Remove ${row.label || "row"}`}
+                  className="grid size-9 place-items-center rounded-lg text-slate-400 transition hover:bg-red-50 hover:text-red-500"
+                >
+                  <Trash2 className="size-4" />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
+/* Highlights: a short headline beside a longer explanation. The brief notes
+   these "require more space than a row", so the explanation is the rich-text
+   editor rather than a single-line input. */
+function HighlightEditor({
+  rows,
+  onChange,
+}: {
+  rows: { title: string; body: string }[];
+  onChange: (rows: { title: string; body: string }[]) => void;
+}) {
+  const set = (i: number, key: "title" | "body", v: string) =>
+    onChange(rows.map((r, j) => (j === i ? { ...r, [key]: v } : r)));
+
+  return (
+    <section>
+      <div className="mb-2 flex items-center justify-between gap-3">
+        <h3 className="text-sm font-semibold text-slate-800">Highlights</h3>
+        <button
+          type="button"
+          onClick={() => onChange([...rows, { title: "", body: "" }])}
+          className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-green hover:underline"
+        >
+          <Plus className="size-3.5" /> Add highlight
+        </button>
+      </div>
+      <p className="mb-2 text-xs text-slate-400">
+        A headline and its explanation — Installation, Delivery, Warranty &amp;
+        After Sales.
+      </p>
+      {rows.length === 0 ? (
+        <p className="text-xs text-slate-300">Nothing added yet.</p>
+      ) : (
+        <div className="space-y-3">
+          {rows.map((row, i) => (
+            <div
+              key={i}
+              className="rounded-xl border border-slate-200 p-3 sm:grid sm:grid-cols-[minmax(0,1fr)_minmax(0,1.9fr)] sm:gap-3"
+            >
+              <div className="flex items-start gap-2">
+                <input
+                  value={row.title}
+                  onChange={(e) => set(i, "title", e.target.value)}
+                  placeholder="Warranty & After Sales"
+                  className={`${input} font-medium`}
+                />
+                <button
+                  type="button"
+                  onClick={() => onChange(rows.filter((_, j) => j !== i))}
+                  aria-label={`Remove ${row.title || "highlight"}`}
+                  className="grid size-11 shrink-0 place-items-center rounded-xl text-slate-400 transition hover:bg-red-50 hover:text-red-500 sm:order-last"
+                >
+                  <Trash2 className="size-4" />
+                </button>
+              </div>
+              <div className="mt-2 sm:mt-0">
+                <RichText
+                  value={row.body}
+                  onChange={(html) => set(i, "body", html)}
+                  placeholder="Explanation — several lines is fine."
+                  minHeight={120}
+                />
+              </div>
             </div>
           ))}
         </div>

@@ -12,13 +12,13 @@ export default function Statement() {
           className="display text-3xl leading-[1.15] text-mist sm:text-5xl sm:leading-[1.12]"
           highlight={[
             "air",
-            "conditioning,",
+            "conditioning",
             "refrigeration",
-            "laundry",
+            "water",
+            "purification",
             "trust",
-            "confidence",
           ]}
-          text="We combine over a decade of technical expertise with a customer-first approach to deliver reliable air conditioning, refrigeration and laundry appliance repairs that homes, businesses and institutions can trust today and depend on tomorrow."
+          text="A subsidiary of Lusako Holdings, we combine over a decade of technical expertise with a customer-first approach to deliver reliable air conditioning, refrigeration and water purification service that homes, businesses, banks and hospitals across Sri Lanka can trust today and depend on tomorrow."
         />
       </div>
     </section>

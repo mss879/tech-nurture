@@ -40,7 +40,22 @@ export default function Hero() {
 
   useGSAP(
     () => {
-      if (!isLoaded) return;
+      /* Hide before first paint (layout effect), NOT via a CSS class in the
+         markup — see the note above about LCP. Runs on every pass; harmless
+         once the entrance timeline has already played. */
+      if (!isLoaded) {
+        gsap.set(
+          [
+            "[data-hero-header]",
+            "[data-hero-eyebrow]",
+            "[data-hero-line] span",
+            "[data-hero-sub]",
+            "[data-hero-cta]",
+          ],
+          { autoAlpha: 0 }
+        );
+        return;
+      }
 
       const tl = gsap.timeline({ defaults: { ease: "power4.out" }, delay: 0.15 });
 
@@ -132,7 +147,7 @@ export default function Hero() {
         />
 
         {/* navbar lives inside the hero container */}
-        <div className="relative z-40 opacity-0" data-hero-header>
+        <div className="relative z-40" data-hero-header>
           <Header embedded />
         </div>
 
@@ -143,7 +158,7 @@ export default function Hero() {
             <div>
               <p
                 data-hero-eyebrow
-                className="eyebrow mb-6 inline-flex items-center gap-2 rounded-full border border-green/20 bg-green/[0.06] px-4 py-1.5 text-green opacity-0"
+                className="eyebrow mb-6 inline-flex items-center gap-2 rounded-full border border-green/20 bg-green/[0.06] px-4 py-1.5 text-green-600"
               >
                 <span className="size-1.5 rounded-full bg-lime" />
                 {hero.eyebrow}
@@ -156,20 +171,20 @@ export default function Hero() {
                     data-hero-line
                     className="block overflow-hidden py-[0.02em]"
                   >
-                    <span className="inline-block opacity-0">{line}</span>
+                    <span className="inline-block">{line}</span>
                   </span>
                 ))}
               </h1>
 
               <p
                 data-hero-sub
-                className="mt-5 max-w-xl text-base text-slate/60 sm:text-lg opacity-0"
+                className="mt-5 max-w-xl text-base text-slate/60 sm:text-lg"
               >
                 {hero.sub}
               </p>
 
               <div className="mt-8 flex flex-wrap items-center gap-3">
-                <div data-hero-cta className="inline-flex opacity-0">
+                <div data-hero-cta className="inline-flex">
                   <Magnetic strength={0.25}>
                     <Link
                       href={hero.primaryCta.href}
@@ -179,7 +194,7 @@ export default function Hero() {
                     </Link>
                   </Magnetic>
                 </div>
-                <div data-hero-cta className="inline-flex opacity-0">
+                <div data-hero-cta className="inline-flex">
                   <Magnetic strength={0.25}>
                     <Link
                       href={hero.secondaryCta.href}

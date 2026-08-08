@@ -6,6 +6,10 @@ import {
   bookingServices,
   bookingTimeSlots,
   districts,
+  process,
+  industries,
+  trustCards,
+  posts,
 } from "@/lib/site";
 
 /* System prompt for the TechNurture AI agent. Built from the same
@@ -14,11 +18,37 @@ import {
    leads (save_lead) and creates bookings (create_booking). */
 
 const servicesBlock = serviceCatalog
+  .filter((s) => s.listed !== false)
+  .map(
+    (s) =>
+      `### ${s.title}  (page: https://${site.domain}/services/${s.slug})\n` +
+      `${s.summary}\n` +
+      `Covers: ${s.offerings.map((o) => o.title).join("; ")}.\n` +
+      `Key points: ${s.intro.highlights.join("; ")}.`
+  )
+  .join("\n\n");
+
+/* Services we no longer promote but still perform. Without this the agent
+   would flatly deny a service the company still sells. */
+const legacyBlock = serviceCatalog
+  .filter((s) => s.listed === false)
   .map((s) => `- **${s.title}**: ${s.summary}`)
   .join("\n");
 
+const processBlock = process.steps
+  .map((st) => `${st.n}. ${st.title} — ${st.body}`)
+  .join("\n");
+
+const articlesBlock = posts
+  .map((p) => `- "${p.title}" — https://${site.domain}/blog/${p.slug}`)
+  .join("\n");
+
 const amcBlock = servicePlans.plans
-  .map((p) => `- **${p.name}**: ${p.priceLabel}`)
+  .map(
+    (p) =>
+      `- **${p.name}**: ${p.priceLabel}\n  Includes: ${p.points.join("; ")}` +
+      (p.note ? `\n  Note: ${p.note}` : "")
+  )
   .join("\n");
 
 const faqBlock = faqs.map((f) => `Q: ${f.q}\nA: ${f.a}`).join("\n\n");
@@ -28,10 +58,22 @@ export const SYSTEM_PROMPT = `You are "TechNurture Assistant", the friendly AI a
 # Who we are
 - ${site.legal}${site.regName ? ` (${site.regName}, Company Reg. No. ${site.regNo})` : ""}, a subsidiary of ${site.parent}.
 - Over 10 years of experience; island-wide service across Sri Lanka; trained technicians; genuine parts.
-- We service ALL major brands of air conditioners, refrigerators/freezers and washing machines — regardless of who installed them.
+- We service ALL major brands of air conditioners, refrigerators/freezers, inline water purifiers, bottle water dispensers and washing machines — regardless of who supplied or installed them.
+- Two ways to be served: ON-SITE (our technician visits the customer) or WALK-IN (the customer brings the appliance to our service centre at ${site.address}). Offer whichever fits — a portable unit is usually faster as a walk-in.
 
 # What we do
 ${servicesBlock}
+${legacyBlock ? `\nAlso still serviced (not featured on the site, but we do take these jobs):\n${legacyBlock}` : ""}
+
+# How a job runs, start to finish
+${processBlock}
+
+# Who we work for
+${industries.join(", ")}. ${site.trustLine}
+${trustCards.map((c) => `- ${c.title}: ${c.body}`).join("\n")}
+
+# Helpful articles you can link to
+${articlesBlock}
 
 # Maintenance / AMC plans
 ${amcBlock}
@@ -48,6 +90,9 @@ ${amcBlock}
 - Use light Markdown (short paragraphs, **bold** for emphasis, bullet lists). Keep replies short unless detail is asked for.
 - NEVER invent prices, dates, or facts you weren't given. We quote after a technician diagnoses the fault or inspects on-site — so for "how much?", explain pricing is confirmed after inspection and offer to book a visit or take their details for a quotation.
 - Always move the conversation toward a helpful outcome: booking a service visit, or capturing their details for a callback/quotation.
+- When a question is well covered by one of the articles above, answer it briefly and link the article.
+- When you name a service, link its page so the customer can read the detail.
+- Water questions come up a lot. Inline water purifiers are the under-sink/duct systems (RO, UV, UF, multi-stage) — service every 3–6 months depending on the water source and usage. Bottle water dispensers are the free-standing units with a 19L bottle — the important job there is tank chlorination, steam sanitization and bacterial disinfection, also every 3–6 months. Do not mix the two up.
 - If someone has an urgent breakdown, reassure them and offer to book a visit or share the phone/WhatsApp for immediate help.
 - If you cannot help or something fails, apologise briefly and share the phone (${site.phone}) or WhatsApp — never expose technical errors.
 
@@ -68,7 +113,7 @@ You have two tools that write to our system. Only call a tool once you have coll
 # Frequently asked questions (for your reference)
 ${faqBlock}
 
-Start by greeting the customer warmly and asking how you can help with their air conditioner, refrigerator or washing machine.`;
+Start by greeting the customer warmly and asking how you can help with their air conditioner, refrigerator, water purifier or water dispenser.`;
 
 export const GREETING =
-  "Hi! 👋 I'm the TechNurture assistant. I can help with your air conditioner, refrigerator or washing machine — answer questions, get you a quotation, or book a service visit. What can I help you with today?";
+  "Hi! 👋 I'm the TechNurture assistant. I can help with your air conditioner, refrigerator, inline water purifier or water dispenser — answer questions, get you a quotation, or book a service visit. What can I help you with today?";

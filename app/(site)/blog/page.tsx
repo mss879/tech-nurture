@@ -12,7 +12,7 @@ export const revalidate = 60;
 export const metadata: Metadata = {
   title: "Blog",
   description:
-    "Practical guides on air conditioning, refrigerator and washing machine repair, plus preventive maintenance, from the TechNurture team.",
+    "Practical guides on air conditioning, refrigeration, inline water purifiers and bottle water dispensers, plus preventive maintenance, from the TechNurture team.",
   alternates: { canonical: "/blog" },
 };
 

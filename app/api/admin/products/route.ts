@@ -5,22 +5,24 @@ import {
   actorId,
 } from "@/lib/admin/permissions";
 import { slugify } from "@/lib/admin/slug";
+import { isBlankHtml, sanitizeHtml } from "@/lib/rich-text";
 
 /* The shop catalogue, from the admin side. Unlike the public reads in
    lib/products.server.ts this returns unpublished products too. */
 
 const SELECT = `
-  id, created_at, updated_at, slug, name, series, form, blurb, images,
-  pdf_url, features, specs, is_published, position, category_id,
-  product_variants ( id, model, filtration, recommended_for, filter_stages, price, plus_vat, position ),
+  id, created_at, updated_at, slug, name, subtitle, series, blurb,
+  description, meta_title, meta_description,
+  key_features, why_choose, perfect_for,
+  images, features, specs, is_published, position,
+  category_id, brand_id,
+  product_variants ( id, model, option_label, price, plus_vat, position ),
   product_tag_links ( tag_id )
 `;
 
 type VariantInput = {
   model?: string;
-  filtration?: string;
-  recommendedFor?: string;
-  filterStages?: string;
+  optionLabel?: string;
   price?: number | string;
   plusVat?: boolean;
 };
@@ -33,9 +35,7 @@ function toVariantRows(productId: string, input: unknown) {
     .map((v: VariantInput, i) => ({
       product_id: productId,
       model: String(v?.model ?? "").trim(),
-      filtration: v?.filtration?.trim() || null,
-      recommended_for: v?.recommendedFor?.trim() || null,
-      filter_stages: v?.filterStages?.trim() || null,
+      option_label: v?.optionLabel?.trim() || null,
       price: Number(v?.price ?? 0) || 0,
       plus_vat: v?.plusVat === true,
       position: i,
@@ -43,15 +43,68 @@ function toVariantRows(productId: string, input: unknown) {
     .filter((v) => v.model);
 }
 
-function toJsonList(input: unknown, keys: [string, string]) {
+function toJsonList(
+  input: unknown,
+  keys: [string, string],
+  richValue = false
+) {
   if (!Array.isArray(input)) return [];
   return input
     .filter((x): x is Record<string, unknown> => !!x && typeof x === "object")
-    .map((x) => ({
-      [keys[0]]: String(x[keys[0]] ?? "").trim(),
-      [keys[1]]: String(x[keys[1]] ?? "").trim(),
-    }))
+    .map((x) => {
+      const raw = String(x[keys[1]] ?? "");
+      return {
+        [keys[0]]: String(x[keys[0]] ?? "").trim(),
+        // A Highlight's explanation is rich text from the admin editor;
+        // sanitised here so nothing but the allow-list ever reaches the DB.
+        [keys[1]]: richValue
+          ? isBlankHtml(raw)
+            ? ""
+            : sanitizeHtml(raw)
+          : raw.trim(),
+      };
+    })
     .filter((x) => x[keys[0]] || x[keys[1]]);
+}
+
+/* Key Features / Why Choose / Perfect For — plain one-line bullets. */
+function toStringList(input: unknown) {
+  if (!Array.isArray(input)) return [];
+  return input
+    .map((v) => (typeof v === "string" ? v.trim() : ""))
+    .filter(Boolean);
+}
+
+/* The copy fields shared by POST and PATCH, so the two can never drift. */
+function contentColumns(body: Record<string, any>, partial: boolean) {
+  const out: Record<string, unknown> = {};
+  const text = (key: string, column: string) => {
+    if (!partial || body[key] !== undefined) {
+      out[column] = typeof body[key] === "string" && body[key].trim()
+        ? body[key].trim()
+        : null;
+    }
+  };
+  text("subtitle", "subtitle");
+  text("metaTitle", "meta_title");
+  text("metaDescription", "meta_description");
+
+  if (!partial || body.brandId !== undefined) out.brand_id = body.brandId || null;
+  if (!partial || body.description !== undefined) {
+    out.description = isBlankHtml(body.description)
+      ? null
+      : sanitizeHtml(body.description);
+  }
+  if (!partial || body.keyFeatures !== undefined) {
+    out.key_features = toStringList(body.keyFeatures);
+  }
+  if (!partial || body.whyChoose !== undefined) {
+    out.why_choose = toStringList(body.whyChoose);
+  }
+  if (!partial || body.perfectFor !== undefined) {
+    out.perfect_for = toStringList(body.perfectFor);
+  }
+  return out;
 }
 
 /* Replace the child rows wholesale. Variant and tag counts are tiny, and
@@ -94,7 +147,7 @@ export async function GET() {
   const supabase = getServerSupabase();
   if (!supabase) return notConfigured();
 
-  const [productsRes, categoriesRes, tagsRes] = await Promise.all([
+  const [productsRes, categoriesRes, tagsRes, brandsRes] = await Promise.all([
     supabase
       .from("products")
       .select(SELECT)
@@ -105,6 +158,11 @@ export async function GET() {
       .select("id, name, slug, description, position")
       .order("position", { ascending: true }),
     supabase.from("product_tags").select("id, name, slug").order("name"),
+    supabase
+      .from("product_brands")
+      .select("id, name, slug, position")
+      .order("position", { ascending: true })
+      .order("name"),
   ]);
 
   if (productsRes.error) {
@@ -119,6 +177,8 @@ export async function GET() {
     products: productsRes.data ?? [],
     categories: categoriesRes.data ?? [],
     tags: tagsRes.data ?? [],
+    // Empty until 019 has been run — the drop-down simply has no options.
+    brands: brandsRes.error ? [] : brandsRes.data ?? [],
   });
 }
 
@@ -153,13 +213,12 @@ export async function POST(request: Request) {
       slug,
       name,
       series: body.series?.trim() || null,
-      form: body.form?.trim() || null,
       blurb: body.blurb?.trim() || null,
       category_id: body.categoryId || null,
       images: Array.isArray(body.images) ? body.images : [],
-      pdf_url: body.pdfUrl?.trim() || null,
-      features: toJsonList(body.features, ["title", "body"]),
+      features: toJsonList(body.features, ["title", "body"], true),
       specs: toJsonList(body.specs, ["label", "value"]),
+      ...contentColumns(body, false),
       is_published: body.isPublished === true,
       position: Number(body.position ?? 0) || 0,
       created_by: actorId(me),
@@ -229,16 +288,15 @@ export async function PATCH(request: Request) {
     update.slug = slug;
   }
   if (body.series !== undefined) update.series = body.series?.trim() || null;
-  if (body.form !== undefined) update.form = body.form?.trim() || null;
   if (body.blurb !== undefined) update.blurb = body.blurb?.trim() || null;
   if (body.categoryId !== undefined) update.category_id = body.categoryId || null;
   if (body.images !== undefined) {
     update.images = Array.isArray(body.images) ? body.images : [];
   }
-  if (body.pdfUrl !== undefined) update.pdf_url = body.pdfUrl?.trim() || null;
   if (body.features !== undefined) {
-    update.features = toJsonList(body.features, ["title", "body"]);
+    update.features = toJsonList(body.features, ["title", "body"], true);
   }
+  Object.assign(update, contentColumns(body, true));
   if (body.specs !== undefined) {
     update.specs = toJsonList(body.specs, ["label", "value"]);
   }

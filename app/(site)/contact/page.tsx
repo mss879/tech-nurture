@@ -8,7 +8,7 @@ import { site, faqs, whatsappLink } from "@/lib/site";
 export const metadata: Metadata = {
   title: "Contact",
   description:
-    "Get a quotation, book a free inspection or request a repair or maintenance visit. Island-wide air conditioning, refrigerator and washing machine service across Sri Lanka.",
+    "Get a quotation, book a free inspection or request a repair or maintenance visit. Island-wide air conditioning, refrigeration and water purification service across Sri Lanka.",
   alternates: { canonical: "/contact" },
 };
 

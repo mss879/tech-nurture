@@ -1,13 +1,19 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import dynamic from "next/dynamic";
 import { MessageCircle, X, Send, Loader2 } from "lucide-react";
 import { whatsappLink } from "@/lib/site";
 
 type Msg = { role: "user" | "assistant" | "agent"; content: string };
 const SID_KEY = "tn_chat_sid";
+
+/* Only assistant bubbles render Markdown, and none exist until the panel is
+   opened — so the renderer is loaded on demand rather than on every page. */
+const Markdown = dynamic(() => import("./Markdown"), { ssr: false });
+// Warmed on the launcher click so the module is parsed before the panel
+// finishes animating in and the greeting bubble has something to render with.
+const warmMarkdown = () => void import("./Markdown");
 
 /* WhatsApp glyph (lucide has no brand icon); inherits currentColor. */
 function WhatsAppIcon({ className }: { className?: string }) {
@@ -18,8 +24,12 @@ function WhatsAppIcon({ className }: { className?: string }) {
   );
 }
 
+/* Kept as a local copy rather than imported from lib/ai/context: that module
+   builds the whole system prompt from the site content, and pulling it into a
+   client component would ship all of it to the browser. Keep this in sync with
+   GREETING there — it is the same message with Markdown emphasis. */
 const GREETING =
-  "Hi! 👋 I'm the **TechNurture** assistant. I can help with your air conditioner, refrigerator or washing machine — answer questions, get you a quotation, or book a service visit. How can I help?";
+  "Hi! 👋 I'm the **TechNurture** assistant. I can help with your air conditioner, refrigerator, inline water purifier or water dispenser — answer questions, get you a quotation, or book a service visit. How can I help?";
 
 function newId() {
   try {
@@ -214,7 +224,12 @@ export default function ChatWidget() {
         {/* AI assistant launcher */}
         <button
           ref={launcherRef}
-          onClick={() => setOpen((v) => !v)}
+          onPointerEnter={warmMarkdown}
+          onFocus={warmMarkdown}
+          onClick={() => {
+            warmMarkdown();
+            setOpen((v) => !v);
+          }}
           aria-label={open ? "Close chat" : "Chat with our AI assistant"}
           className="grid size-14 place-items-center rounded-full bg-lime text-ink shadow-[0_10px_35px_-8px_rgba(143,209,63,0.7)] transition hover:bg-lime-bright active:scale-95"
         >
@@ -288,9 +303,7 @@ export default function ChatWidget() {
                     )}
                     {m.role === "assistant" ? (
                       <div className="[&_a]:font-medium [&_a]:text-green [&_a]:underline [&_li]:my-0.5 [&_ol]:my-1 [&_ol]:list-decimal [&_ol]:pl-4 [&_p]:mb-2 [&_p:last-child]:mb-0 [&_strong]:font-semibold [&_ul]:my-1 [&_ul]:list-disc [&_ul]:pl-4">
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                          {m.content}
-                        </ReactMarkdown>
+                        <Markdown>{m.content}</Markdown>
                       </div>
                     ) : (
                       <p className="whitespace-pre-wrap">{m.content}</p>

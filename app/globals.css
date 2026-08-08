@@ -74,10 +74,14 @@ html.lenis body {
   font-size: 0.72rem;
   font-weight: 500;
 }
-/* Specifically make header navbar menu items use the Display Sans-Serif font (Poppins) and be bold */
-header nav a.eyebrow,
-.relative nav a.eyebrow,
-nav a.eyebrow {
+/* Header nav items use the display face (Poppins), bold — not the mono
+   `.eyebrow` treatment used elsewhere.
+
+   Matched by class, not by tag: the Services and Products triggers are
+   <button> (they open a drop-down rather than navigating), and an
+   `a.eyebrow` selector silently dropped them back to JetBrains Mono at a
+   different size and tracking. */
+nav :is(a, button).eyebrow {
   font-family: var(--font-display);
   font-weight: 700 !important;
   text-transform: uppercase;
@@ -192,4 +196,61 @@ nav a.eyebrow {
   .marquee-track {
     animation: none;
   }
+}
+
+/* ---- Rich text --------------------------------------------------
+   Shared by the admin editor (components/admin/RichText.tsx) and the
+   product page that renders what it produced, so what the client types
+   is what they see published. The tag list matches the allow-list in
+   lib/rich-text.ts — anything else is stripped before it reaches here. */
+.prose-admin p,
+.prose-product p {
+  margin-bottom: 0.85em;
+}
+.prose-admin p:last-child,
+.prose-product p:last-child {
+  margin-bottom: 0;
+}
+.prose-admin h3,
+.prose-product h3 {
+  font-weight: 600;
+  font-size: 1.05em;
+  margin: 1.2em 0 0.5em;
+}
+.prose-admin h3:first-child,
+.prose-product h3:first-child {
+  margin-top: 0;
+}
+.prose-admin ul,
+.prose-product ul {
+  list-style: disc;
+  padding-left: 1.25em;
+  margin: 0.6em 0 0.9em;
+}
+.prose-admin ol,
+.prose-product ol {
+  list-style: decimal;
+  padding-left: 1.35em;
+  margin: 0.6em 0 0.9em;
+}
+.prose-admin li,
+.prose-product li {
+  margin: 0.25em 0;
+}
+.prose-admin strong,
+.prose-product strong {
+  font-weight: 600;
+}
+.prose-admin a,
+.prose-product a {
+  color: var(--color-green-600);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.prose-product blockquote,
+.prose-admin blockquote {
+  border-left: 3px solid var(--color-lime);
+  padding-left: 1em;
+  margin: 1em 0;
+  font-style: italic;
 }

@@ -6,7 +6,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: `${site.name} — Appliance Repair & Maintenance`,
     short_name: site.name,
     description:
-      "Fast, reliable repair, servicing and maintenance for air conditioners, refrigerators and washing machines across Sri Lanka.",
+      "Fast, reliable repair, servicing and maintenance for air conditioners, refrigerators, inline water purifiers and bottle water dispensers across Sri Lanka.",
     start_url: "/",
     display: "standalone",
     background_color: "#f1f4f0",

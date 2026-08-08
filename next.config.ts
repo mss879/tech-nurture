@@ -6,8 +6,19 @@ const nextConfig: NextConfig = {
   distDir: process.env.NEXT_DIST_DIR || ".next",
   poweredByHeader: false,
   compress: true,
+  /* lucide-react ships ~6,000 icon modules behind one barrel file; without
+     this every import pulls the barrel through the bundler. */
+  experimental: {
+    optimizePackageImports: ["lucide-react"],
+  },
   images: {
     formats: ["image/avif", "image/webp"],
+    /* Optimized variants were being revalidated every 4 hours (the default)
+       and the widest source image is 1476px, so w=3840 was returning bytes
+       identical to w=1080. */
+    minimumCacheTTL: 31536000,
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
     // Blog cover images uploaded through the admin live in Supabase Storage
     // (https://<project-ref>.supabase.co/storage/v1/object/public/blog/...).
     // Allow next/image to optimize them.
@@ -56,6 +67,20 @@ const nextConfig: NextConfig = {
         source: "/hero-particles.mp4",
         headers: [
           { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+        ],
+      },
+      {
+        /* Everything else in public/ was being served `max-age=0`, so the
+           logo and hero poster were refetched on every navigation. These
+           filenames are NOT content-hashed, so `immutable` would be wrong —
+           a day of freshness with a week of stale-while-revalidate lets a
+           replaced asset roll out without a cache-busting rename. */
+        source: "/:path*.(png|jpg|jpeg|webp|avif|svg|ico|woff2)",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=86400, stale-while-revalidate=604800",
+          },
         ],
       },
     ];

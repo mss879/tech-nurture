@@ -6,7 +6,9 @@ import { site, creator, social } from "@/lib/site";
 const poppins = Poppins({
   variable: "--font-poppins",
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700", "800", "900"],
+  // Audited against the codebase: no font-light anywhere, and the only
+  // font-black is in the preloader. Two fewer woff2 files racing the LCP.
+  weight: ["400", "500", "600", "700", "800"],
   display: "swap",
 });
 
@@ -21,15 +23,17 @@ export const metadata: Metadata = {
   metadataBase: new URL(`https://${site.domain}`),
   title: {
     default:
-      "TechNurture — AC, Refrigerator & Washing Machine Repair in Sri Lanka",
+      "TechNurture — AC, Fridge & Water Purifier Repair in Sri Lanka",
     template: "%s · TechNurture",
   },
   description:
-    "TechNurture Pvt Ltd — fast, reliable repair, servicing and maintenance for air conditioners, refrigerators and washing machines across Sri Lanka. Genuine parts, trained technicians, island-wide. A subsidiary of Lusako Holdings.",
+    "TechNurture Pvt Ltd — fast, reliable repair, servicing and maintenance for air conditioners, refrigerators, inline water purifiers and bottle water dispensers across Sri Lanka. Genuine parts, trained technicians, island-wide.",
   keywords: [
     "appliance repair Sri Lanka",
     "AC repair Sri Lanka",
     "refrigerator repair Sri Lanka",
+    "inline water purifier service Sri Lanka",
+    "water dispenser repair Sri Lanka",
     "washing machine repair Sri Lanka",
     "appliance AMC Sri Lanka",
     "TechNurture",
@@ -44,7 +48,7 @@ export const metadata: Metadata = {
     locale: "en_LK",
     title: "TechNurture — Appliance Repair & Maintenance in Sri Lanka",
     description:
-      "Fast, reliable repair and maintenance for air conditioners, refrigerators and washing machines — island-wide across Sri Lanka.",
+      "Fast, reliable repair and maintenance for air conditioners, refrigerators, inline water purifiers and bottle water dispensers — island-wide across Sri Lanka.",
     images: [
       {
         url: "/opengraph-image.png",
@@ -58,7 +62,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "TechNurture — Appliance Repair & Maintenance in Sri Lanka",
     description:
-      "Fast, reliable repair and maintenance for AC, refrigerators and washing machines across Sri Lanka.",
+      "Fast, reliable repair and maintenance for AC, refrigerators, water purifiers and dispensers across Sri Lanka.",
     images: ["/opengraph-image.png"],
   },
 };
@@ -122,7 +126,7 @@ export default function RootLayout({
               url: `https://${site.domain}`,
               logo: `https://${site.domain}/tech-nature-side.png`,
               description:
-                "Home-appliance repair, servicing and maintenance across Sri Lanka — air conditioners, refrigerators and washing machines.",
+                "Appliance repair, servicing and maintenance across Sri Lanka — air conditioners, refrigerators, inline water purifiers and bottle water dispensers.",
               telephone: site.phone,
               email: site.email,
               areaServed: { "@type": "Country", name: "Sri Lanka" },

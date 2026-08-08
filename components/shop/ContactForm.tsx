@@ -2,16 +2,9 @@
 
 import { useState } from "react";
 import { Send, CheckCircle2, Loader2 } from "lucide-react";
-import { whatsappLink } from "@/lib/site";
-
-const serviceOptions = [
-  "Air Conditioning — Repair / Service",
-  "Air Conditioning — Installation",
-  "Refrigerator / Freezer — Repair",
-  "Washing Machine — Repair",
-  "Annual Maintenance Contract (AMC)",
-  "Other",
-];
+/* The service list is shared with the /book form via lib/site.ts — this
+   file used to keep its own copy, which had already drifted. */
+import { bookingServices as serviceOptions, whatsappLink } from "@/lib/site";
 
 const provinces = [
   "Western",

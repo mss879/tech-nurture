@@ -9,7 +9,7 @@ import { about, stats, trustCards, site } from "@/lib/site";
 export const metadata: Metadata = {
   title: "About",
   description:
-    "TechNurture Pvt Ltd — a subsidiary of Lusako Holdings, delivering reliable air conditioning, refrigerator and washing machine repair and maintenance across Sri Lanka for over a decade.",
+    "TechNurture Pvt Ltd — a subsidiary of Lusako Holdings, delivering reliable air conditioning, refrigeration and water purification service across Sri Lanka for over a decade.",
   alternates: { canonical: "/about" },
 };
 
