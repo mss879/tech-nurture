@@ -159,14 +159,14 @@ export const hero = {
   eyebrow: "Technology Inspired by Nurture",
   // Floating credibility pills (kept general — no single-service framing)
   pills: [
-    { label: "Island-Wide", color: "lime" },
+    { label: "Islandwide", color: "lime" },
     { label: "10+ Years", color: "teal" },
     { label: "Trusted Team", color: "green" },
     { label: "Fast Response", color: "navy" },
     { label: "Genuine Parts", color: "lime" },
   ],
   headline: ["Reliable systems.", "Total confidence."],
-  sub: "Expert repair, servicing and maintenance for air conditioners, refrigerators, inline water purifiers and bottle water dispensers — keeping homes and businesses across Sri Lanka cool, fresh and running.",
+  sub: "Expert repair, servicing and maintenance for air conditioners, refrigerators, inline water purifiers and bottle water dispensers, keeping homes and businesses across Sri Lanka cool, fresh and running.",
   primaryCta: { label: "Explore Services", href: "/services" },
   secondaryCta: { label: "Contact Us", href: "/contact" },
 };
@@ -823,6 +823,23 @@ export const posts = [
     ],
   },
   {
+    slug: "reverse-osmosis-vs-uv-water-filtration",
+    title: "Reverse Osmosis vs UV Purification: Which Water Filter Is Right for You?",
+    excerpt:
+      "Understanding RO vs UV filtration technologies, how they target different contaminants, and which system best suits Sri Lankan municipal and borehole water supplies.",
+    date: "2026-08-07",
+    readTime: "5 min read",
+    category: "Inline Water Purifiers",
+    image: "/blog/water-purifier-comparison.png",
+    body: [
+      "Choosing between Reverse Osmosis (RO) and Ultraviolet (UV) water purification depends on your water source and the specific contaminants you need to eliminate. In Sri Lanka, water composition varies significantly between mains municipal supply and groundwater wells.",
+      "Reverse Osmosis (RO) uses a semi-permeable membrane to remove dissolved solids, heavy metals, hardness minerals, microplastics, and chemical pollutants. It is ideal for areas with hard water or high total dissolved solids (TDS).",
+      "Ultraviolet (UV) purification uses UV-C light to neutralize 99.99% of bacteria, viruses, and biological pathogens without chemical additives or water wastage. UV systems excel at biological disinfection when TDS levels are already low.",
+      "Many modern inline systems combine multi-stage sediment filtering, carbon block adsorption, RO membrane filtration, and final UV sterilization into a unified under-sink unit for maximum safety and taste enhancement.",
+      "Our water specialists conduct on-site water quality testing to recommend the optimal purification setup for your home or business across Sri Lanka, backed by genuine filter replacement and routine maintenance contracts.",
+    ],
+  },
+  {
     slug: "benefits-of-an-appliance-amc",
     title: "The Benefits of an Appliance Annual Maintenance Contract",
     excerpt:
@@ -832,7 +849,7 @@ export const posts = [
     category: "Maintenance",
     image: "/blog/amc-benefits.png",
     body: [
-      "Preventive maintenance is the key to maximizing appliance performance, reducing downtime and extending asset lifespan. An Annual Maintenance Contract (AMC) makes that preventive care automatic for your air conditioners, refrigerators and washing machines.",
+      "Preventive maintenance is the key to maximizing appliance performance, reducing downtime and extending asset lifespan. An Annual Maintenance Contract (AMC) makes that preventive care automatic for your air conditioners, refrigerators, inline water purifiers, and bottle water dispensers.",
       "A Comprehensive AMC is our most complete solution — scheduled preventive visits, routine servicing, labour, eligible spare-part replacement, breakdown support and priority technical assistance, all for one predictable annual cost.",
       "A Non-Comprehensive AMC is the economical option: professional servicing, inspections, labour and technical support, with replacement parts charged separately as needed.",
       "Prefer to pay only when something happens? On-Call Service gives you service visits on request, breakdown troubleshooting and inspections without a contract.",
@@ -843,15 +860,15 @@ export const posts = [
     slug: "extend-the-life-of-your-home-appliances",
     title: "7 Habits That Extend the Life of Your Home Appliances",
     excerpt:
-      "Small routines that keep your AC, fridge and washing machine running longer — and out of the repair queue.",
+      "Small routines that keep your AC, fridge and water systems running longer — and out of the repair queue.",
     date: "2026-06-10",
     readTime: "4 min read",
     category: "Maintenance",
     image: "/blog/preventive-maintenance-savings.png",
     body: [
-      "Most appliance failures are gradual, not sudden — which means a few simple habits can add years to the life of your AC, refrigerator and washing machine, and keep them running efficiently.",
-      "Clean or replace filters on schedule. AC filters restrict airflow when clogged, forcing the system to work harder; washing-machine drain filters cause drainage faults when neglected. This is the single highest-impact habit most people skip.",
-      "Give appliances room to breathe. Leave a gap behind the fridge for the condenser to release heat, keep the AC condenser unit clear of leaves and dust, and don't overload the washing machine drum.",
+      "Most appliance failures are gradual, not sudden — which means a few simple habits can add years to the life of your AC, refrigerator, water purifier, and dispenser, and keep them running efficiently.",
+      "Clean or replace filters on schedule. AC filters restrict airflow when clogged, forcing the system to work harder; water purifier filter cartridges cause flow and purity issues when neglected. This is the single highest-impact habit most people skip.",
+      "Give appliances room to breathe. Leave a gap behind the fridge for the condenser to release heat, keep the AC condenser unit clear of leaves and dust, and sanitize water dispenser reservoirs regularly.",
       "Watch for early warning signs — weak cooling, unusual sounds, longer cycles, rising bills or small leaks. Catching a small fault early is almost always cheaper than waiting for a full breakdown.",
       "Finally, book a periodic professional service. Reactive repairs are almost always more expensive, more disruptive and more urgent than planned maintenance — which is exactly what an Annual Maintenance Contract is designed to prevent.",
     ],

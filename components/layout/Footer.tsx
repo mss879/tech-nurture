@@ -58,9 +58,12 @@ export default function Footer() {
               />
             </div>
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-white/55">
-              {site.tagline}. Expert repair and maintenance for air
-              conditioners, refrigerators, inline water purifiers and bottle
-              water dispensers — a subsidiary of {site.parent}.
+              Expert repair and maintenance for air conditioners, refrigerators,
+              inline water purifiers and bottle water dispensers — a subsidiary
+              of {site.parent}.
+            </p>
+            <p className="mt-3 text-xs text-white/40">
+              Company Reg. No. {site.regNo}
             </p>
             <SocialLinks className="mt-6" />
           </div>
@@ -124,9 +127,8 @@ export default function Footer() {
         </div>
 
         <div className="flex flex-col items-center justify-between gap-5 border-t border-white/10 py-7 text-xs text-white/45 sm:flex-row">
-          <p>
-            © {new Date().getFullYear()} {site.regName} · Company Reg. No.{" "}
-            {site.regNo}. All rights reserved.
+          <p className="text-center sm:text-left">
+            © {new Date().getFullYear()} {site.regName}. All rights reserved.
           </p>
 
           {/* Creator credit — dofollow backlink to ARC AI */}
@@ -149,7 +151,12 @@ export default function Footer() {
             />
           </a>
 
-          <p className="eyebrow text-white/30">{site.tagline}</p>
+          <Link
+            href="/privacy-policy"
+            className="eyebrow text-white/50 transition hover:text-lime"
+          >
+            Privacy Policy
+          </Link>
         </div>
       </div>
     </footer>

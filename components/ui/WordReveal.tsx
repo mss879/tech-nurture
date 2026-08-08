@@ -54,10 +54,10 @@ export default function WordReveal({
         const clean = w.replace(/[.,]/g, "").toLowerCase();
         const isHl = highlight.includes(clean);
         return (
-          <span key={i} data-word className="inline-block overflow-hidden">
+          <span key={i} data-word className="inline-block">
             <span
               className={`inline-block ${isHl ? "text-lime" : ""}`}
-              style={{ marginRight: "0.26em" }}
+              style={{ marginRight: "0.28em" }}
             >
               {w}
             </span>

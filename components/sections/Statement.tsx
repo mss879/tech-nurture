@@ -9,7 +9,7 @@ export default function Statement() {
           Our Commitment
         </p>
         <WordReveal
-          className="display text-3xl leading-[1.15] text-mist sm:text-5xl sm:leading-[1.12]"
+          className="display text-2xl leading-snug text-mist sm:text-4xl lg:text-[2.65rem] lg:leading-[1.24]"
           highlight={[
             "air",
             "conditioning",
