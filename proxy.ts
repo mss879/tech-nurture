@@ -12,9 +12,25 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const { response, user, configured } = await updateSession(request);
 
-  // Before Supabase keys are added, let requests through so the app can
-  // render its "connect Supabase" states instead of trapping the user.
-  if (!configured) return response;
+  /* Before Supabase keys are added, let requests through so the app can
+     render its "connect Supabase" states instead of trapping the user.
+
+     Never in production. Without keys there is no session to check, and
+     getCurrentAdmin falls back to a synthetic super admin — so letting the
+     request through would hand the whole dashboard to anyone who asked.
+     A missing env var is a deployment mistake, not a reason to unlock the
+     admin, and on Netlify a branch or preview deploy without env vars is
+     still a public URL. Fail closed and say why. */
+  if (!configured) {
+    if (process.env.NODE_ENV !== "production") return response;
+    if (pathname.startsWith("/api/admin/") || pathname.startsWith("/admin")) {
+      return NextResponse.json(
+        { error: "This deployment is not configured." },
+        { status: 503 }
+      );
+    }
+    return response;
+  }
 
   // updateSession may have refreshed the auth cookies onto `response`.
   // Any new response we return instead MUST carry those Set-Cookie headers,

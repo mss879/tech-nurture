@@ -3,6 +3,28 @@ import { getVariant } from "@/lib/products.server";
 
 type IncomingItem = { slug: string; model: string; qty: number };
 
+/* Public and unauthenticated, and every customer column is unbounded
+   `text`. Clip rather than reject so a chatty delivery note still gets
+   through. Prices are never taken from the request — see below. */
+const LIMITS = {
+  name: 120,
+  email: 160,
+  phone: 40,
+  address: 500,
+  city: 80,
+  province: 80,
+  notes: 2000,
+} as const;
+
+function clip(value: unknown, max: number): string | null {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  return trimmed ? trimmed.slice(0, max) : null;
+}
+
+// A basket of 500 lines would mean 500 catalogue lookups per request.
+const MAX_LINES = 50;
+
 export async function POST(request: Request) {
   const supabase = getServerSupabase();
   if (!supabase) return notConfigured();
@@ -25,8 +47,17 @@ export async function POST(request: Request) {
     return Response.json({ error: "Invalid request body." }, { status: 400 });
   }
 
-  const c = body.customer;
-  if (!c?.name || !c?.email || !c?.phone || !c?.address) {
+  const c = body.customer ?? {};
+  const customer = {
+    name: clip(c.name, LIMITS.name),
+    email: clip(c.email, LIMITS.email),
+    phone: clip(c.phone, LIMITS.phone),
+    address: clip(c.address, LIMITS.address),
+    city: clip(c.city, LIMITS.city),
+    province: clip(c.province, LIMITS.province),
+    notes: clip(c.notes, LIMITS.notes),
+  };
+  if (!customer.name || !customer.email || !customer.phone || !customer.address) {
     return Response.json(
       { error: "Name, email, contact number and address are required." },
       { status: 400 }
@@ -34,6 +65,12 @@ export async function POST(request: Request) {
   }
   if (!Array.isArray(body.items) || body.items.length === 0) {
     return Response.json({ error: "Your basket is empty." }, { status: 400 });
+  }
+  if (body.items.length > MAX_LINES) {
+    return Response.json(
+      { error: "That's too many different items for one order." },
+      { status: 400 }
+    );
   }
 
   // Re-price every line on the server from the published catalogue, so a
@@ -68,13 +105,13 @@ export async function POST(request: Request) {
   const { data: order, error: orderError } = await supabase
     .from("orders")
     .insert({
-      customer_name: c.name,
-      email: c.email,
-      phone: c.phone,
-      address: c.address,
-      city: c.city ?? null,
-      province: c.province ?? null,
-      notes: c.notes || null,
+      customer_name: customer.name,
+      email: customer.email,
+      phone: customer.phone,
+      address: customer.address,
+      city: customer.city,
+      province: customer.province,
+      notes: customer.notes,
       total,
       has_vat_items: hasVat,
     })

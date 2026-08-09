@@ -27,6 +27,15 @@ import {
    boundary — RLS cannot help. */
 
 
+/* The two fallbacks below hand out full access, so they must never fire on
+   a live site. They exist to keep local setup from trapping the owner
+   before Supabase is connected or 014 has been run — both of which are
+   development states. In production the honest answer to "I can't tell
+   who you are" is no access at all. proxy.ts fails closed the same way. */
+function devFallbackAllowed() {
+  return process.env.NODE_ENV !== "production";
+}
+
 /* Before 014 exists, the rule documented in 009 still applies: any
    authenticated Supabase user is a full admin. Behaving that way here
    means deploying this code before running the migration can't lock the
@@ -99,7 +108,9 @@ export const getCurrentAdmin = cache(
     // this state so the app can render its "connect Supabase" screens —
     // do the same here instead of trapping the owner before setup.
     if (!supabaseConfigured()) {
-      return syntheticSuperAdmin("not-configured", "");
+      return devFallbackAllowed()
+        ? syntheticSuperAdmin("not-configured", "")
+        : null;
     }
 
     const user = await getAuthUser();
@@ -118,7 +129,13 @@ export const getCurrentAdmin = cache(
       // 014 hasn't been run yet — behave exactly as the app did before it
       // existed, so deploying ahead of the migration can't lock anyone out.
       if (isMissingSchema(error)) {
-        return syntheticSuperAdmin(user.id, user.email ?? "");
+        if (devFallbackAllowed()) {
+          return syntheticSuperAdmin(user.id, user.email ?? "");
+        }
+        console.error(
+          "admin_users is missing in production — run 014_admin_users.sql. Denying access."
+        );
+        return null;
       }
       console.error("admin profile lookup failed:", error);
       return null; // fail closed on a real failure

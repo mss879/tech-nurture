@@ -1,8 +1,26 @@
 import { getServerSupabase, notConfigured } from "@/lib/supabase/server";
+import { bookingServices, bookingTimeSlots, districts } from "@/lib/site";
 
 /* Public endpoint — a customer books a service through /book.
    The service-role client inserts the booking (anon INSERT is also
    allowed by RLS). Reads/updates happen in the admin. */
+
+const LIMITS = { name: 120, phone: 40, email: 160, address: 500, message: 2000 } as const;
+
+function clip(value: unknown, max: number): string | null {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  return trimmed ? trimmed.slice(0, max) : null;
+}
+
+/* service, district and time are pick-lists on the form, so they should be
+   pick-lists here too — otherwise anyone posting straight at the endpoint
+   can write arbitrary text into the admin's booking table. Same
+   case-insensitive allow-list match the chat agent's tools already use. */
+function matchOption(value: unknown, options: readonly string[]): string | null {
+  const v = String(value ?? "").trim().toLowerCase();
+  return options.find((o) => o.toLowerCase() === v) ?? null;
+}
 export async function POST(request: Request) {
   const supabase = getServerSupabase();
   if (!supabase) return notConfigured();
@@ -24,18 +42,21 @@ export async function POST(request: Request) {
     return Response.json({ error: "Invalid request body." }, { status: 400 });
   }
 
-  const required = [
-    ["name", body.name],
-    ["phone", body.phone],
-    ["service", body.service],
-    ["district", body.district],
-    ["preferred_date", body.preferred_date],
-    ["preferred_time", body.preferred_time],
-  ] as const;
-  const missing = required.filter(([, v]) => !v || !String(v).trim());
-  if (missing.length > 0) {
+  const name = clip(body.name, LIMITS.name);
+  const phone = clip(body.phone, LIMITS.phone);
+  const service = matchOption(body.service, bookingServices);
+  const district = matchOption(body.district, districts);
+  const preferredTime = matchOption(body.preferred_time, bookingTimeSlots);
+
+  if (!name || !phone || !body.preferred_date) {
     return Response.json(
       { error: "Name, phone, service, district, date and time are required." },
+      { status: 400 }
+    );
+  }
+  if (!service || !district || !preferredTime) {
+    return Response.json(
+      { error: "Please choose a service, district and time from the list." },
       { status: 400 }
     );
   }
@@ -67,15 +88,15 @@ export async function POST(request: Request) {
   }
 
   const { error } = await supabase.from("bookings").insert({
-    name: body.name!.trim(),
-    phone: body.phone!.trim(),
-    email: body.email?.trim() || null,
-    service: body.service,
-    district: body.district,
-    preferred_date: body.preferred_date,
-    preferred_time: body.preferred_time,
-    address: body.address?.trim() || null,
-    message: body.message?.trim() || null,
+    name,
+    phone,
+    email: clip(body.email, LIMITS.email),
+    service,
+    district,
+    preferred_date: preferred,
+    preferred_time: preferredTime,
+    address: clip(body.address, LIMITS.address),
+    message: clip(body.message, LIMITS.message),
   });
 
   if (error) {

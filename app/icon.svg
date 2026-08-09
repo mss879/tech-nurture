@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="TechNature">
+  <title>TechNature</title>
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0a3a52"/>
+      <stop offset="0.55" stop-color="#052f43"/>
+      <stop offset="1" stop-color="#0b5b66"/>
+    </linearGradient>
+    <linearGradient id="leaf" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#1f9243"/>
+      <stop offset="1" stop-color="#8fd13f"/>
+    </linearGradient>
+  </defs>
+
+  <!-- The hexagon of the brand mark, filled rather than outlined: at 16px an
+       outline collapses into a grey ring. Stroking the same path with a round
+       join is what rounds the corners — cheaper than six arc segments. -->
+  <path d="M50 256 L153 80 L359 80 L462 256 L359 432 L153 432 Z"
+        fill="url(#tile)" stroke="url(#tile)" stroke-width="48" stroke-linejoin="round"/>
+
+  <!-- The leaf from the logo, sweeping up to the right. Two arcs meeting at
+       two points, so it keeps a leaf's asymmetry instead of collapsing into
+       a lens. It sits under the letters and stops short of them: at 16px it
+       reads as weight grounding the mark, not as a shape competing with it. -->
+  <path d="M126 414 C 192 358 300 338 398 350 C 376 424 246 458 126 414 Z"
+        fill="url(#leaf)"/>
+
+  <!-- TN as geometry, not text — a favicon can't rely on a font being there.
+       Stems are 50 units on a 512 grid, so they hold up as ~1.5px at 16px.
+       Sat a touch high on purpose: at 16px the leaf and the baseline are
+       about a pixel apart, and without the gap they merge into a smudge. -->
+  <g fill="#a6e84a">
+    <path d="M92 142 H222 V192 H182 V318 H132 V192 H92 Z"/>
+    <path d="M246 318 V142 H296 L362 244 V142 H412 V318 H362 L296 216 V318 Z"/>
+  </g>
+</svg>
