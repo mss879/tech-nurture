@@ -3,8 +3,25 @@ import { generateText, tool, stepCountIs } from "ai";
 import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getServerSupabase } from "@/lib/supabase/server";
+import { notify } from "@/lib/admin/notify";
 import { SYSTEM_PROMPT, GREETING } from "@/lib/ai/context";
 import { site, bookingServices, bookingTimeSlots, districts } from "@/lib/site";
+
+/* Who an AI-captured lead belongs to until someone hands it on. There is
+   exactly one super admin — the owner — so this is unambiguous. Returns
+   null before 014 has run, in which case the lead stays unassigned, which
+   is the old behaviour. */
+async function superAdminId(supabase: SupabaseClient): Promise<string | null> {
+  const { data } = await supabase
+    .from("admin_users")
+    .select("id")
+    .eq("role", "super_admin")
+    .eq("is_active", true)
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  return (data?.id as string | undefined) ?? null;
+}
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -345,22 +362,54 @@ export async function POST(request: Request) {
                   .limit(1)
                   .maybeSingle();
                 if (stage) {
-                  await supabase.from("crm_leads").insert({
-                    pipeline_id: pipeline.id,
-                    stage_id: stage.id,
-                    name: input.name.trim(),
-                    phone: input.phone.trim(),
-                    email: input.email?.trim() || null,
-                    source: "ai",
-                    enquiry_id: enq.id,
-                    notes:
-                      [
-                        input.service_interest && `Interest: ${input.service_interest}`,
-                        input.message,
-                      ]
-                        .filter(Boolean)
-                        .join("\n") || null,
-                  });
+                  /* Give it an owner. Everyone except the super admin
+                     sees the board filtered to the people they're allowed
+                     to see, and an unassigned lead matches nobody — so a
+                     lead left with assigned_to NULL is invisible to every
+                     department head and member until somebody happens to
+                     notice it. Parking it with the owner means it lands
+                     in a real inbox with a real notification, and they can
+                     hand it on from the board. */
+                  const owner = await superAdminId(supabase);
+
+                  const { data: lead } = await supabase
+                    .from("crm_leads")
+                    .insert({
+                      pipeline_id: pipeline.id,
+                      stage_id: stage.id,
+                      name: input.name.trim(),
+                      phone: input.phone.trim(),
+                      email: input.email?.trim() || null,
+                      source: "ai",
+                      enquiry_id: enq.id,
+                      assigned_to: owner,
+                      assigned_at: owner ? new Date().toISOString() : null,
+                      notes:
+                        [
+                          input.service_interest && `Interest: ${input.service_interest}`,
+                          input.message,
+                        ]
+                          .filter(Boolean)
+                          .join("\n") || null,
+                    })
+                    .select("id")
+                    .single();
+
+                  if (owner && lead) {
+                    await notify(supabase, [
+                      {
+                        user_id: owner,
+                        kind: "lead_assigned",
+                        title: `New AI lead: ${input.name.trim()}`,
+                        body: input.service_interest
+                          ? `Interested in ${input.service_interest}.`
+                          : null,
+                        href: "/admin/crm",
+                        lead_id: lead.id,
+                      },
+                    ]);
+                  }
+
                   await supabase
                     .from("enquiries")
                     .update({ status: "in_crm" })

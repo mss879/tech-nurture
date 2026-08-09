@@ -33,7 +33,7 @@ import {
   formatLKR,
 } from "./ui";
 import { useMe } from "./MeProvider";
-import { can, isSuperAdmin } from "@/lib/admin/types";
+import { can, isDeptHead, isSuperAdmin } from "@/lib/admin/types";
 
 type Lead = {
   id: string;
@@ -102,9 +102,17 @@ export default function CrmView() {
   const me = useMe();
   const toast = useToast();
   const superAdmin = me ? isSuperAdmin(me) : false;
+  const deptHead = me ? isDeptHead(me) : false;
   const mayCreate = me ? can(me, "can_create_leads") : false;
   const mayEdit = me ? can(me, "can_edit_leads") : false;
   const mayDelete = me ? can(me, "can_delete_leads") : false;
+
+  /* A head's board now carries their whole department, so the capability
+     flags alone no longer answer "may I touch this card?" — oversight is a
+     read. The API says the same thing (crm/leads/route.ts refuses any
+     write on a lead that isn't yours unless you're the super admin); this
+     just stops the board offering a move the server would reject. */
+  const isMine = (lead: Lead) => superAdmin || lead.assigned_to === me?.id;
 
   const [pipelines, setPipelines] = useState<Pipeline[] | null>(null);
   const [members, setMembers] = useState<Member[]>([]);
@@ -112,6 +120,11 @@ export default function CrmView() {
   const [loading, setLoading] = useState(true);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  /* Heads only. "mine" is the board they actually work; "department" adds
+     their colleagues' cards as read-only. A super admin has no toggle —
+     everything is already theirs to touch. */
+  const [scope, setScope] = useState<"mine" | "department">("mine");
 
   // drag-and-drop between stages
   const [dragLeadId, setDragLeadId] = useState<string | null>(null);
@@ -186,7 +199,7 @@ export default function CrmView() {
   /* Mirrors the rule the API enforces, so the board never invites a move
      the server will refuse. */
   const canMoveTo = (lead: Lead, target: Stage) => {
-    if (!mayEdit) return false;
+    if (!mayEdit || !isMine(lead)) return false;
     const from = stages.find((s) => s.id === lead.stage_id);
     if (target.id === lead.stage_id) return false;
     if (target.kind !== "active") return true; // Won/Lost from anywhere
@@ -510,6 +523,9 @@ export default function CrmView() {
   const renderColumn = (stage: Stage) => {
     const leads = (active?.crm_leads ?? [])
       .filter((l) => l.stage_id === stage.id)
+      // The server already narrowed this to what the caller may see; the
+      // tab just narrows it further, in the browser, with no round trip.
+      .filter((l) => scope === "department" || isMine(l))
       .sort(
         (a, b) =>
           new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
@@ -567,18 +583,21 @@ export default function CrmView() {
           )}
           {leads.map((lead) => {
             const owner = memberName(lead.assigned_to);
+            const mine = isMine(lead);
             return (
               <div
                 key={lead.id}
-                draggable={mayEdit}
+                draggable={mayEdit && mine}
                 onDragStart={() => setDragLeadId(lead.id)}
                 onDragEnd={() => {
                   setDragLeadId(null);
                   setDragOverStage(null);
                 }}
-                className={`rounded-xl border border-slate-200 bg-white p-3.5 shadow-sm transition ${
-                  mayEdit ? "cursor-grab active:cursor-grabbing" : ""
-                } ${dragLeadId === lead.id ? "opacity-50" : ""}`}
+                className={`rounded-xl border bg-white p-3.5 shadow-sm transition ${
+                  mine ? "border-slate-200" : "border-dashed border-slate-300"
+                } ${mayEdit && mine ? "cursor-grab active:cursor-grabbing" : ""} ${
+                  dragLeadId === lead.id ? "opacity-50" : ""
+                }`}
               >
                 <div className="flex items-start justify-between gap-2">
                   <p className="text-sm font-semibold text-slate-800">
@@ -617,11 +636,14 @@ export default function CrmView() {
                     {lead.notes}
                   </p>
                 )}
-                {superAdmin && (
+                {(superAdmin || deptHead) && (
                   <p className="mt-2 flex items-center gap-1.5 text-[0.68rem] text-slate-500">
                     <UserRound className="size-3 text-slate-300" />
-                    {owner ?? (
+                    {mine ? "You" : owner ?? (
                       <span className="text-amber-600">Unassigned</span>
+                    )}
+                    {!mine && (
+                      <span className="text-slate-400">· read-only</span>
                     )}
                   </p>
                 )}
@@ -641,7 +663,9 @@ export default function CrmView() {
                     )}
                     <button
                       onClick={() => moveLead(lead, 1)}
-                      disabled={stageIdx === ordered.length - 1 || !mayEdit}
+                      disabled={
+                        stageIdx === ordered.length - 1 || !mayEdit || !mine
+                      }
                       aria-label="Move to next stage"
                       className="grid size-7 place-items-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 disabled:opacity-30"
                     >
@@ -656,7 +680,7 @@ export default function CrmView() {
                     >
                       <Eye className="size-3.5" />
                     </button>
-                    {mayEdit && (
+                    {mayEdit && mine && (
                       <button
                         onClick={() => openEditLead(lead)}
                         aria-label="Edit lead"
@@ -665,7 +689,7 @@ export default function CrmView() {
                         <Pencil className="size-3.5" />
                       </button>
                     )}
-                    {mayDelete && (
+                    {mayDelete && mine && (
                       <button
                         onClick={() => deleteLead(lead)}
                         aria-label="Delete lead"
@@ -691,7 +715,9 @@ export default function CrmView() {
         sub={
           superAdmin
             ? "Leads move forward through the stages. Mark Won or Lost at any time."
-            : "Your leads. They move forward through the stages — Won or Lost at any time."
+            : deptHead
+              ? "Your department's leads. You can work your own and watch everyone else's."
+              : "Your leads. They move forward through the stages — Won or Lost at any time."
         }
       >
         {superAdmin && (
@@ -706,6 +732,31 @@ export default function CrmView() {
           </button>
         )}
       </PageHeader>
+
+      {/* A head works their own board by default; the second tab widens it
+          to the whole department so they can see how everyone is doing. */}
+      {deptHead && (
+        <div className="mb-6 flex flex-wrap gap-2">
+          {(
+            [
+              ["mine", "My leads"],
+              ["department", "My department"],
+            ] as const
+          ).map(([key, text]) => (
+            <button
+              key={key}
+              onClick={() => setScope(key)}
+              className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+                scope === key
+                  ? "bg-green text-white"
+                  : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"
+              }`}
+            >
+              {text}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* pipeline tabs */}
       {pipelines.length > 0 && (
@@ -726,7 +777,11 @@ export default function CrmView() {
                   p.id === activeId ? "text-white/70" : "text-slate-400"
                 }`}
               >
-                {p.crm_leads.length}
+                {
+                  p.crm_leads.filter(
+                    (l) => scope === "department" || isMine(l)
+                  ).length
+                }
               </span>
             </button>
           ))}
@@ -943,7 +998,9 @@ export default function CrmView() {
             </div>
           </div>
 
-          {(mayEdit || mayDelete) && (
+          {/* A head can open a colleague's card to see how it's going, but
+              not act on it — same rule the API enforces. */}
+          {isMine(detail) && (mayEdit || mayDelete) && (
             <div className="mt-6 flex gap-2 border-t border-slate-100 pt-5">
               {mayEdit && (
                 <button

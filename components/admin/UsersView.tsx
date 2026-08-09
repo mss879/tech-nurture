@@ -12,6 +12,8 @@ import {
   UserX,
   UserCheck,
   ShieldAlert,
+  Building2,
+  X,
 } from "lucide-react";
 import {
   api,
@@ -25,14 +27,21 @@ import {
 } from "./ui";
 import { useMe } from "./MeProvider";
 import { grantableNavItems } from "@/lib/admin/nav";
-import type { NavKey } from "@/lib/admin/types";
+import { GRANTABLE_ROLES, type AdminRole, type NavKey } from "@/lib/admin/types";
+
+/* Every role this page can hand out. The owner's `super_admin` is
+   deliberately not among them — see roleOf() in the users API route. */
+type GrantableRole = (typeof GRANTABLE_ROLES)[number]["value"];
+
+type Department = { id: string; created_at: string; name: string };
 
 type Row = {
   id: string;
   created_at: string;
   email: string;
   full_name: string | null;
-  role: "super_admin" | "user";
+  role: AdminRole;
+  department_id: string | null;
   is_active: boolean;
   nav_access: NavKey[];
   can_create_leads: boolean;
@@ -47,7 +56,8 @@ type Form = {
   fullName: string;
   email: string;
   password: string;
-  role: "super_admin" | "user";
+  role: GrantableRole;
+  departmentId: string;
   navAccess: NavKey[];
   canCreateLeads: boolean;
   canEditLeads: boolean;
@@ -62,6 +72,7 @@ const emptyForm: Form = {
   email: "",
   password: "",
   role: "user",
+  departmentId: "",
   // Everyone starts with their own to-do list.
   navAccess: ["todos"],
   canCreateLeads: false,
@@ -70,6 +81,12 @@ const emptyForm: Form = {
   canCreateProducts: false,
   canEditProducts: false,
   canDeleteProducts: false,
+};
+
+const ROLE_LABELS: Record<AdminRole, string> = {
+  super_admin: "Super admin",
+  dept_head: "Department head",
+  user: "Team member",
 };
 
 const input =
@@ -83,9 +100,15 @@ export default function UsersView() {
 
   const [rows, setRows] = useState<Row[] | null>(null);
   const [unlinked, setUnlinked] = useState<{ id: string; email: string }[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
   const [error, setError] = useState<ApiError | Error | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+
+  const [newDept, setNewDept] = useState("");
+  const [renaming, setRenaming] = useState<{ id: string; name: string } | null>(
+    null
+  );
 
   const [editor, setEditor] = useState<
     { mode: "add" } | { mode: "edit"; user: Row } | null
@@ -103,11 +126,13 @@ export default function UsersView() {
   const load = useCallback(async () => {
     setError(null);
     try {
-      const data = await api<{ users: Row[]; unlinked: typeof unlinked }>(
-        "/api/admin/users"
-      );
+      const [data, depts] = await Promise.all([
+        api<{ users: Row[]; unlinked: typeof unlinked }>("/api/admin/users"),
+        api<{ departments: Department[] }>("/api/admin/departments"),
+      ]);
       setRows(data.users);
       setUnlinked(data.unlinked ?? []);
+      setDepartments(depts.departments ?? []);
     } catch (e) {
       setError(e as Error);
     } finally {
@@ -118,6 +143,9 @@ export default function UsersView() {
   useEffect(() => {
     load();
   }, [load]);
+
+  const departmentName = (id: string | null) =>
+    departments.find((d) => d.id === id)?.name ?? null;
 
   const upd = <K extends keyof Form>(k: K, v: Form[K]) =>
     setForm((f) => ({ ...f, [k]: v }));
@@ -131,7 +159,11 @@ export default function UsersView() {
     }));
 
   const openAdd = () => {
-    setForm(emptyForm);
+    setForm({
+      ...emptyForm,
+      // One department is no choice at all — preselect it.
+      departmentId: departments.length === 1 ? departments[0].id : "",
+    });
     setCopied(false);
     setEditor({ mode: "add" });
   };
@@ -141,7 +173,10 @@ export default function UsersView() {
       fullName: user.full_name ?? "",
       email: user.email,
       password: "",
-      role: user.role,
+      // The owner's row has no editable role; the form value is inert for
+      // them because save() leaves `role` out of the payload entirely.
+      role: user.role === "dept_head" ? "dept_head" : "user",
+      departmentId: user.department_id ?? "",
       navAccess: user.nav_access ?? [],
       canCreateLeads: user.can_create_leads,
       canEditLeads: user.can_edit_leads,
@@ -176,14 +211,24 @@ export default function UsersView() {
     }
   };
 
+  /* The one super admin is the owner's account, set up in SQL. This page
+     can't create another and can't re-role the existing one, so their row
+     shows a locked notice and sends neither `role` nor `departmentId` —
+     sending them would collide with the "you can't change your own role"
+     guard in the API and turn "rename myself" into an error. */
+  const editingOwner = editor?.mode === "edit" && editor.user.role === "super_admin";
+
   const save = async () => {
     if (!editor || busy) return;
     if (editor.mode === "add" && (!form.email.trim() || !form.password)) return;
+    if (!editingOwner && !form.departmentId) return;
     setBusy(true);
     try {
       const payload = {
         fullName: form.fullName,
-        role: form.role,
+        ...(editingOwner
+          ? {}
+          : { role: form.role, departmentId: form.departmentId }),
         navAccess: form.navAccess,
         canCreateLeads: form.canCreateLeads,
         canEditLeads: form.canEditLeads,
@@ -240,6 +285,73 @@ export default function UsersView() {
       await load();
     } catch (e) {
       toast((e as Error).message);
+    }
+  };
+
+  const addDepartment = async () => {
+    const name = newDept.trim();
+    if (!name || busy) return;
+    setBusy(true);
+    try {
+      await api("/api/admin/departments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name }),
+      });
+      setNewDept("");
+      await load();
+    } catch (e) {
+      toast((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const saveRename = async () => {
+    if (!renaming || busy || !renaming.name.trim()) return;
+    setBusy(true);
+    try {
+      await api("/api/admin/departments", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: renaming.id, name: renaming.name.trim() }),
+      });
+      setRenaming(null);
+      await load();
+    } catch (e) {
+      toast((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  /* Raw fetch, not api(): a department that still has people in it comes
+     back as a 409 carrying the head-count, and api() would throw the body
+     away before we could say how many. */
+  const removeDepartment = async (dept: Department) => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const res = await fetch(`/api/admin/departments?id=${dept.id}`, {
+        method: "DELETE",
+      });
+      const body = await res.json().catch(() => ({}));
+
+      if (res.status === 409 && body?.error === "department_not_empty") {
+        const n = body.members ?? 0;
+        toast(
+          `${dept.name} still has ${n} ${n === 1 ? "person" : "people"} in it. Move them somewhere else first.`
+        );
+        return;
+      }
+      if (!res.ok) throw new Error(body?.error || `Request failed (${res.status})`);
+
+      toast(`${dept.name} was removed.`, "success");
+      await load();
+    } catch (e) {
+      toast((e as Error).message);
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -319,6 +431,75 @@ export default function UsersView() {
         </div>
       )}
 
+      {/* Departments live here rather than behind their own menu item:
+          setting up the org and putting people into it is one job. */}
+      <div className="mb-6 overflow-hidden rounded-2xl border border-slate-200 bg-white">
+        <div className="flex items-center gap-2 border-b border-slate-100 px-6 py-3">
+          <Building2 className="size-4 text-slate-400" />
+          <h2 className="text-sm font-semibold text-slate-700">Departments</h2>
+          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">
+            {departments.length}
+          </span>
+        </div>
+
+        <div className="px-6 py-4">
+          {departments.length === 0 ? (
+            <p className="mb-4 text-sm text-slate-500">
+              No departments yet. Add one before you add people — everyone
+              belongs to a department.
+            </p>
+          ) : (
+            <ul className="mb-4 flex flex-wrap gap-2">
+              {departments.map((dept) => {
+                const headcount = rows.filter(
+                  (r) => r.department_id === dept.id
+                ).length;
+                return (
+                  <li
+                    key={dept.id}
+                    className="inline-flex items-center gap-2 rounded-full bg-slate-100 py-1 pl-3 pr-1.5 text-sm text-slate-700"
+                  >
+                    <button
+                      onClick={() => setRenaming({ id: dept.id, name: dept.name })}
+                      title="Rename"
+                      className="font-medium hover:underline"
+                    >
+                      {dept.name}
+                    </button>
+                    <span className="text-xs text-slate-400">{headcount}</span>
+                    <button
+                      onClick={() => removeDepartment(dept)}
+                      aria-label={`Remove ${dept.name}`}
+                      title="Remove"
+                      className="grid size-5 place-items-center rounded-full text-slate-400 transition hover:bg-red-100 hover:text-red-500"
+                    >
+                      <X className="size-3.5" />
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+
+          <div className="flex gap-2">
+            <input
+              value={newDept}
+              onChange={(e) => setNewDept(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && addDepartment()}
+              placeholder="Sales, Service, Installations…"
+              className={`${input} max-w-xs`}
+            />
+            <button
+              onClick={addDepartment}
+              disabled={busy || !newDept.trim()}
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-slate-200 px-4 text-sm font-medium text-slate-600 transition hover:bg-slate-50 disabled:opacity-40"
+            >
+              <Plus className="size-4" /> Add
+            </button>
+          </div>
+        </div>
+      </div>
+
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
         <div className="hidden grid-cols-[1.4fr_1fr_1.6fr_auto] gap-4 border-b border-slate-100 px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-400 lg:grid">
           <span>Person</span>
@@ -354,11 +535,19 @@ export default function UsersView() {
                     className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ${
                       user.role === "super_admin"
                         ? "bg-lime/20 text-green-700 ring-lime"
-                        : "bg-slate-100 text-slate-600 ring-slate-200"
+                        : user.role === "dept_head"
+                          ? "bg-blue-50 text-blue-700 ring-blue-200"
+                          : "bg-slate-100 text-slate-600 ring-slate-200"
                     }`}
                   >
-                    {user.role === "super_admin" ? "Super admin" : "Team member"}
+                    {ROLE_LABELS[user.role]}
                   </span>
+                  {departmentName(user.department_id) && (
+                    <span className="inline-flex items-center gap-1 text-xs text-slate-500">
+                      <Building2 className="size-3" />
+                      {departmentName(user.department_id)}
+                    </span>
+                  )}
                   {!user.is_active && (
                     <span className="inline-flex rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-medium text-red-600 ring-1 ring-red-200">
                       Switched off
@@ -495,25 +684,61 @@ export default function UsersView() {
               </p>
             </div>
 
-            <div>
-              <label className={label}>Role</label>
-              <select
-                value={form.role}
-                onChange={(e) => upd("role", e.target.value as Form["role"])}
-                className={input}
-              >
-                <option value="user">Team member</option>
-                <option value="super_admin">Super admin</option>
-              </select>
-            </div>
-
-            {form.role === "super_admin" ? (
+            {editingOwner ? (
               <p className="rounded-xl bg-lime/10 px-4 py-3 text-sm leading-relaxed text-slate-600 ring-1 ring-lime/40">
-                Super admins see every menu and every lead, can add and remove
-                team members, assign leads, and are the only people who can
-                move a lead back to an earlier stage.
+                <strong className="font-semibold">Super admin — the owner account.</strong>{" "}
+                There is only one, and it can&apos;t be changed here or handed
+                to anyone else. It sees every menu and every lead, assigns
+                leads, and is the only account that can move a lead back to an
+                earlier stage.
               </p>
             ) : (
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label className={label}>Role</label>
+                  <select
+                    value={form.role}
+                    onChange={(e) => upd("role", e.target.value as Form["role"])}
+                    className={input}
+                  >
+                    {GRANTABLE_ROLES.map((r) => (
+                      <option key={r.value} value={r.value}>
+                        {r.label}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="mt-1.5 text-xs text-slate-400">
+                    {form.role === "dept_head"
+                      ? "Sees every to-do and lead in their department, and hands out to-dos to their own people."
+                      : "Sees only the to-dos and leads assigned to them."}
+                  </p>
+                </div>
+                <div>
+                  <label className={label}>Department</label>
+                  <select
+                    value={form.departmentId}
+                    onChange={(e) => upd("departmentId", e.target.value)}
+                    className={input}
+                  >
+                    <option value="">Choose a department…</option>
+                    {departments.map((d) => (
+                      <option key={d.id} value={d.id}>
+                        {d.name}
+                      </option>
+                    ))}
+                  </select>
+                  {!form.departmentId && (
+                    <p className="mt-1.5 text-xs text-amber-600">
+                      {departments.length === 0
+                        ? "Add a department above first."
+                        : "Everyone belongs to a department."}
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {editingOwner ? null : (
               <>
                 <div>
                   <div className="mb-2 flex items-center justify-between">
@@ -594,8 +819,9 @@ export default function UsersView() {
                         Delete leads
                       </label>
                       <p className="border-t border-slate-100 pt-2.5 text-xs leading-relaxed text-slate-400">
-                        They&apos;ll only see leads assigned to them, and leads
-                        can never be moved backwards.
+                        {form.role === "dept_head"
+                          ? "These apply to their own leads. A head also sees their whole department's leads, but read-only — only you can assign a lead or move one backwards."
+                          : "They'll only see leads assigned to them, and leads can never be moved backwards."}
                       </p>
                     </div>
                   </div>
@@ -657,13 +883,43 @@ export default function UsersView() {
             onClick={save}
             disabled={
               busy ||
-              (editor.mode === "add" && (!form.email.trim() || !form.password))
+              (editor.mode === "add" && (!form.email.trim() || !form.password)) ||
+              (!editingOwner && !form.departmentId)
             }
             className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full bg-ink px-6 py-3 text-sm font-medium text-white transition hover:bg-slate-700 disabled:opacity-50"
           >
             {busy && <Loader2 className="size-4 animate-spin" />}
             {editor.mode === "add" ? "Create user" : "Save changes"}
           </button>
+        </Modal>
+      )}
+
+      {renaming && (
+        <Modal title="Rename department" onClose={() => setRenaming(null)}>
+          <label className={label}>Name</label>
+          <input
+            autoFocus
+            value={renaming.name}
+            onChange={(e) => setRenaming({ ...renaming, name: e.target.value })}
+            onKeyDown={(e) => e.key === "Enter" && saveRename()}
+            className={input}
+          />
+          <div className="mt-5 flex gap-2">
+            <button
+              onClick={() => setRenaming(null)}
+              className="flex-1 rounded-full border border-slate-200 px-5 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={saveRename}
+              disabled={busy || !renaming.name.trim()}
+              className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-ink px-5 py-2.5 text-sm font-medium text-white transition hover:bg-slate-700 disabled:opacity-50"
+            >
+              {busy && <Loader2 className="size-4 animate-spin" />}
+              Save
+            </button>
+          </div>
         </Modal>
       )}
 

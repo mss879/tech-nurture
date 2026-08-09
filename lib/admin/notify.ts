@@ -2,16 +2,27 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { isMissingSchema } from "./db";
 
 /* Event notifications — "a lead was assigned to you", "a to-do was
-   assigned to you". Written at the moment the thing happens, because an
-   assignment is a discrete fact rather than something derivable later.
+   assigned to you", "someone mentioned you". Written at the moment the
+   thing happens, because an assignment is a discrete fact rather than
+   something derivable later.
+
+   Removing someone from a to-do deliberately leaves their old
+   notification alone: it records that the assignment happened, which is
+   still true. Their due-date reminders stop on their own, because the
+   todo_reminders view simply stops producing the row.
 
    Due-date reminders are NOT stored: they're computed from the todos
    table by the todo_reminders view, so editing a due date can't leave a
-   stale "due tomorrow" behind. See 016_todos.sql. */
+   stale "due tomorrow" behind. See 016_todos.sql and 023. */
+
+export type NotificationKind =
+  | "todo_assigned"
+  | "todo_mentioned"
+  | "lead_assigned";
 
 export type NotificationRow = {
   user_id: string;
-  kind: "todo_assigned" | "lead_assigned";
+  kind: NotificationKind;
   title: string;
   body?: string | null;
   href?: string | null;

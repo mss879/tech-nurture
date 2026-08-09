@@ -1,6 +1,6 @@
 import { getServerSupabase, notConfigured } from "@/lib/supabase/server";
 import { requireNav, requireSuperAdmin } from "@/lib/admin/permissions";
-import { isSuperAdmin } from "@/lib/admin/types";
+import { visibleUserIds } from "@/lib/admin/departments";
 
 const DEFAULT_STAGES = [
   { name: "New", kind: "active" },
@@ -11,7 +11,12 @@ const DEFAULT_STAGES = [
 ];
 
 /* GET — every pipeline with its stages, plus the leads the caller may
-   see: all of them for a super admin, only their own otherwise.
+   see: all of them for a super admin, their whole department's for a
+   department head, and only their own for everyone else.
+
+   A head's view is read-only — the write rules in ./leads/route.ts still
+   ask "is this lead assigned to me?", so seeing a colleague's card does
+   not come with the ability to move or reassign it.
 
    Pipelines and leads are fetched separately and stitched together rather
    than embedding leads in the pipeline select. An embedded filter does
@@ -32,7 +37,8 @@ export async function GET() {
   if (!supabase) return notConfigured();
 
   const leadQuery = supabase.from("crm_leads").select("*");
-  if (!isSuperAdmin(me)) leadQuery.eq("assigned_to", me.id);
+  const visible = await visibleUserIds(me);
+  if (visible) leadQuery.in("assigned_to", visible);
 
   const [pipelineRes, leadRes] = await Promise.all([
     supabase

@@ -2,12 +2,19 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Bell, Check, CalendarClock, KanbanSquare, ListChecks } from "lucide-react";
+import {
+  Bell,
+  Check,
+  CalendarClock,
+  KanbanSquare,
+  ListChecks,
+  AtSign,
+} from "lucide-react";
 import { api } from "./ui";
 
 type Item = {
   id: string;
-  kind: "todo_assigned" | "lead_assigned" | "todo_due";
+  kind: "todo_assigned" | "todo_mentioned" | "lead_assigned" | "todo_due";
   title: string;
   body: string | null;
   href: string | null;
@@ -156,6 +163,8 @@ export default function NotificationBell({ dark = false }: { dark?: boolean }) {
                       <CalendarClock className="size-3.5" />
                     ) : item.kind === "lead_assigned" ? (
                       <KanbanSquare className="size-3.5" />
+                    ) : item.kind === "todo_mentioned" ? (
+                      <AtSign className="size-3.5" />
                     ) : (
                       <ListChecks className="size-3.5" />
                     )}

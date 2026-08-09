@@ -27,6 +27,14 @@ In the Supabase dashboard → **SQL Editor**, run each file in
 | `014_admin_users.sql` | Team members, roles and permissions | Users & Access |
 | `015_crm_access.sql` | Lead assignment, Won/Lost outcomes, stage history | CRM |
 | `016_todos.sql` | To-dos, notifications, due-date reminders | To-dos |
+| `017_products.sql` | Products, product permissions | Products |
+| `018_water_services_pivot.sql` | Content pivot to water services | Services |
+| `019_product_content_fields.sql` | `product_brands` + product content fields | Products |
+| `020_product_fields_cleanup.sql` | Product field cleanup | Products |
+| `021_add_ro_vs_uv_blog.sql` | **Optional** — seeds one blog post | Blog |
+| `022_departments.sql` | Departments and the `dept_head` role | Users & Access |
+| `023_todo_participants.sql` | Many assignees per to-do, @mentions | To-dos |
+| `024_todo_links.sql` | Linking a to-do to enquiries / leads / orders / bookings | To-dos |
 
 > `010_dashboard.sql` replaces the view created in `004`, so it must run after
 > `005`–`008`. `011` is optional — skip it to start with an empty blog (the
@@ -36,6 +44,12 @@ In the Supabase dashboard → **SQL Editor**, run each file in
 > one email address to super admin and drops every other existing account to
 > limited access. If that address doesn't exist yet it aborts on purpose,
 > rather than leaving you with no super admin at all.
+>
+> **`022`–`024` must be run before deploying the code that uses them.**
+> `023` drops `todos.assigned_to` and `024` drops `todos.lead_id`, both after
+> moving the data into their new tables — so the app expects them gone. Between
+> deploying and running them the To-dos page says which file is missing rather
+> than failing silently.
 
 ## 2. Admin accounts
 
@@ -55,25 +69,38 @@ by a per-person permission row in `public.admin_users`.
 3. Run `014_admin_users.sql`. That account becomes the **super admin**.
 
 **Everyone else** is added from inside the app — **Users & Access → Add team
-member**. That screen sets their password, which menu items they can open, and
-what they may do to CRM leads. Accounts created directly in the Supabase
-dashboard can't sign in to the admin; they show up on that page as
+member**. That screen sets their password, their department, which menu items
+they can open, and what they may do to CRM leads. Accounts created directly in
+the Supabase dashboard can't sign in to the admin; they show up on that page as
 "no access set up" so you can add them properly.
 
-**Roles**
+**Roles** (from `022` onwards)
 
 - **Super admin** — sees every menu and every lead, adds and removes team
   members, assigns leads and to-dos, manages pipeline stages, and is the only
   person who can move a lead back to an earlier stage.
-- **Team member** — sees only the menus they've been given and only the leads
-  assigned to them.
+- **Department head** — sees every to-do and every lead belonging to their own
+  department, and hands out to-dos to their own people. Their CRM view of
+  colleagues' leads is **read-only**: only the super admin assigns leads or
+  moves one backwards.
+- **Team member** — sees only the menus they've been given, only the leads
+  assigned to them, and only the to-dos they're assigned to, mentioned on, or
+  created.
 
-**Locked out?** If there's no working super admin, run this in the SQL editor:
+**There is exactly one super admin**, and the app can no longer create another:
+the Users & Access page offers only Department head and Department member, and
+the API refuses `super_admin` whatever the request body says. Promoting someone
+is deliberately a SQL-editor job:
 
 ```sql
 update public.admin_users set role = 'super_admin', is_active = true
 where email = 'admin@technurture.lk';
 ```
+
+**Locked out?** Run exactly that. Note the `dept_head` rows carry a
+`admin_users_dept_head_has_department` check, so a head always has a
+`department_id` — set one in the same statement if you demote someone into that
+role by hand.
 
 ## 3. Storage (blog images)
 

@@ -1,7 +1,7 @@
 import { getServerSupabase, notConfigured } from "@/lib/supabase/server";
 import { requireNav } from "@/lib/admin/permissions";
 import { isMissingSchema } from "@/lib/admin/db";
-import { isSuperAdmin } from "@/lib/admin/types";
+import { canSeeWorkOf, visibleUserIds } from "@/lib/admin/departments";
 
 /* GET ?leadId=<uuid> — the stage timeline for one lead, shown in the
    detail popup: when it entered each stage, who moved it, and whether a
@@ -27,7 +27,11 @@ export async function GET(request: Request) {
 
   if (!lead) return Response.json({ error: "Lead not found." }, { status: 404 });
 
-  if (!isSuperAdmin(me) && lead.assigned_to !== me.id) {
+  // Matches the board: if you can see the card, you can read its timeline.
+  // A head watching their department needs the history to judge progress —
+  // it is the only record of who moved what and when.
+  const visible = await visibleUserIds(me);
+  if (!canSeeWorkOf(visible, lead.assigned_to)) {
     return Response.json(
       { error: "This lead isn't assigned to you." },
       { status: 403 }

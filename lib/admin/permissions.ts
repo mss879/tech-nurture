@@ -9,6 +9,7 @@ import {
   can,
   isSuperAdmin,
   type AdminProfile,
+  type AdminRole,
   type Capability,
   type NavKey,
 } from "./types";
@@ -36,6 +37,7 @@ function syntheticSuperAdmin(id: string, email: string): AdminProfile {
     email,
     full_name: null,
     role: "super_admin",
+    department_id: null,
     is_active: true,
     nav_access: [...NAV_KEYS],
     can_create_leads: true,
@@ -54,12 +56,25 @@ function supabaseConfigured() {
   );
 }
 
+/* An allow-list, not a ternary. The obvious `x === "super_admin" ? … : "user"`
+   would silently demote every department head to a member on read, with
+   nothing thrown and no constraint violated — the department views would
+   just quietly return nothing. */
+function roleFrom(value: unknown): AdminRole {
+  if (value === "super_admin") return "super_admin";
+  if (value === "dept_head") return "dept_head";
+  return "user";
+}
+
 function toProfile(row: Record<string, unknown>): AdminProfile {
   return {
     id: String(row.id),
     email: String(row.email ?? ""),
     full_name: (row.full_name as string | null) ?? null,
-    role: row.role === "super_admin" ? "super_admin" : "user",
+    role: roleFrom(row.role),
+    // Absent until 022 has run, which is fine: every consumer treats a
+    // missing department as "only your own work".
+    department_id: (row.department_id as string | null) ?? null,
     is_active: row.is_active !== false,
     nav_access: Array.isArray(row.nav_access)
       ? (row.nav_access as NavKey[])

@@ -39,12 +39,29 @@ export type ProductCapability =
 
 export type Capability = LeadCapability | ProductCapability;
 
+/* Three tiers, mirrored by the role check constraint in 022_departments.sql.
+     super_admin — the owner. Exactly one, created in SQL by 014. Nothing
+                   the client sends can mint another; see roleOf() in
+                   app/api/admin/users/route.ts.
+     dept_head   — sees and assigns their own department's work. Always has
+                   a department_id (the DB enforces it in 022).
+     user        — a department member. Sees only what is theirs. */
+export type AdminRole = "super_admin" | "dept_head" | "user";
+
+/* Roles a super admin may actually hand out, in the order the form shows
+   them. super_admin is deliberately absent. */
+export const GRANTABLE_ROLES = [
+  { value: "dept_head", label: "Department head" },
+  { value: "user", label: "Department member" },
+] as const satisfies readonly { value: Exclude<AdminRole, "super_admin">; label: string }[];
+
 /* One row of public.admin_users — the signed-in person's profile. */
 export type AdminProfile = {
   id: string;
   email: string;
   full_name: string | null;
-  role: "super_admin" | "user";
+  role: AdminRole;
+  department_id: string | null;
   is_active: boolean;
   nav_access: NavKey[];
   can_create_leads: boolean;
@@ -59,11 +76,27 @@ export function isSuperAdmin(me: AdminProfile) {
   return me.role === "super_admin";
 }
 
+export function isDeptHead(me: AdminProfile) {
+  return me.role === "dept_head";
+}
+
+/* Someone who oversees other people's work: the super admin everywhere, a
+   head inside their own department. Use this for "may see a colleague's
+   row" and "may hand work out" — never for write permissions, which stay
+   on the capability flags below. */
+export function isOverseer(me: AdminProfile) {
+  return isSuperAdmin(me) || isDeptHead(me);
+}
+
 /* canAccessNav lives in ./nav.ts — whether a key is super-admin-only is a
    property of the menu, not of the profile. */
 
 /* Super admins can do everything, so a missing flag can never lock one
-   out of their own dashboard. */
+   out of their own dashboard.
+
+   A head is deliberately NOT included: overseeing a department is a read.
+   Editing their own leads still needs the same ticked flags as anyone
+   else, and other people's leads stay read-only to them. */
 export function can(me: AdminProfile, capability: Capability) {
   if (isSuperAdmin(me)) return true;
   return me[capability] === true;

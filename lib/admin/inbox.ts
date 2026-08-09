@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { isMissingSchema } from "./db";
+import type { NotificationKind } from "./notify";
 
 /* The bell's contents for one person, assembled from two sources:
 
@@ -13,7 +14,7 @@ import { isMissingSchema } from "./db";
 
 export type InboxItem = {
   id: string;
-  kind: "todo_assigned" | "lead_assigned" | "todo_due";
+  kind: NotificationKind | "todo_due";
   title: string;
   body: string | null;
   href: string | null;
