@@ -78,6 +78,12 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${poppins.variable} ${mono.variable}`}>
       <head>
+        {/* Instant preloader curtain script — prevents FOUC on homepage before hydration */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var p=window.location.pathname;var s=sessionStorage.getItem("tn:intro-seen");var m=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;if(p==="/"&&s!=="1"&&!m){document.documentElement.classList.add("preloader-active");}}catch(e){}})();`,
+          }}
+        />
         <link rel="author" href={creator.url} />
         {/* Site-wide creator / author credit — ARC AI */}
         <script

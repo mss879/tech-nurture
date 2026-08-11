@@ -43,6 +43,19 @@ html {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* ---- Preloader curtain: prevents flash of homepage before preloader mounts ---- */
+html.preloader-active body {
+  overflow: hidden !important;
+}
+html.preloader-active::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: #000000;
+  z-index: 9998;
+  pointer-events: all;
+}
+
 body {
   background: var(--bg);
   color: var(--fg);

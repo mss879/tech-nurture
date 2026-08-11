@@ -52,11 +52,21 @@ export default function PreloaderGate() {
   useEffect(() => {
     const yes = shouldPlay(pathname);
     setPlay(yes);
-    if (yes) return;
-    (
-      window as unknown as { __preloaderComplete?: boolean }
-    ).__preloaderComplete = true;
-    window.dispatchEvent(new Event("preloaderComplete"));
+    if (!yes) {
+      document.documentElement.classList.remove("preloader-active");
+      (
+        window as unknown as { __preloaderComplete?: boolean }
+      ).__preloaderComplete = true;
+      window.dispatchEvent(new Event("preloaderComplete"));
+      return;
+    }
+
+    // Safety fallback: ensure preloader-active is never stuck on screen
+    const timer = setTimeout(() => {
+      document.documentElement.classList.remove("preloader-active");
+    }, 6500);
+
+    return () => clearTimeout(timer);
     // Deliberately mount-only: the intro belongs to the landing page load, not
     // to later client-side navigations back to /.
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -39,6 +39,7 @@ export default function PreloaderOverlay() {
       if (released) return;
       released = true;
       document.body.style.overflow = "";
+      document.documentElement.classList.remove("preloader-active");
       (
         window as unknown as { __preloaderComplete?: boolean }
       ).__preloaderComplete = true;
