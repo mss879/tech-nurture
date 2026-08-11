@@ -32,6 +32,7 @@ export async function generateMetadata({
       description: service.metaDescription,
       url: `/services/${service.slug}`,
       type: "website",
+      images: [service.image],
     },
   };
 }
