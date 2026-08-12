@@ -159,11 +159,17 @@ async function syncLinks(
   return null;
 }
 
-type AccessRow = { can_see: boolean; can_edit: boolean; can_delete: boolean };
+type AccessRow = {
+  can_see: boolean;
+  can_progress: boolean;
+  can_manage: boolean;
+  can_delete: boolean;
+};
 
 /* The single source of truth for "may I touch this one row", shared with
-   the list query. No rows back means the to-do or the caller is gone —
-   read that as denied. */
+   the list query — todos_for calls the same function per row, so a button
+   the browser draws is this answer and not a second guess at it. No rows
+   back means the to-do or the caller is gone — read that as denied. */
 async function accessTo(
   supabase: SupabaseClient,
   todoId: string,
@@ -175,10 +181,42 @@ async function accessTo(
 
   if (error || !data) {
     if (error) console.error("todo_access failed:", error);
-    return { can_see: false, can_edit: false, can_delete: false };
+    return {
+      can_see: false,
+      can_progress: false,
+      can_manage: false,
+      can_delete: false,
+    };
+  }
+  // A pre-026 database still answers with can_edit and no can_manage.
+  // Failing closed is the safe direction, but say why in the log rather
+  // than leaving the owner staring at an inexplicable 403.
+  if (typeof data.can_manage !== "boolean") {
+    console.error(
+      "todo_access returned no can_manage — run 026_todo_authority.sql."
+    );
+    return {
+      can_see: data.can_see === true,
+      can_progress: false,
+      can_manage: false,
+      can_delete: false,
+    };
   }
   return data;
 }
+
+/* What a to-do IS, as opposed to how far along it is. Everything here
+   belongs to whoever set the work; `status` deliberately isn't, because
+   ticking it off is the assignee's whole job. See 026. */
+const TERM_FIELDS = [
+  "title",
+  "description",
+  "priority",
+  "dueDate",
+  "assignedTo",
+  "mentions",
+  "links",
+] as const;
 
 /* GET — the caller's to-dos.
    ?scope=mine (default) | mentioned | created | department | all
@@ -311,7 +349,11 @@ export async function POST(request: Request) {
 }
 
 /* PATCH — { id, title?, description?, priority?, status?, dueDate?,
-   assignedTo?: string[], mentions?: string[], links?: { kind, id }[] } */
+   assignedTo?: string[], mentions?: string[], links?: { kind, id }[] }
+
+   Two rights, not one. `status` needs can_progress, which every assignee
+   has — that is the job they were given. Everything else needs can_manage,
+   which only whoever set the work has. See TERM_FIELDS and 026. */
 export async function PATCH(request: Request) {
   const gate = await requireNav("todos");
   if ("error" in gate) return gate.error;
@@ -341,7 +383,7 @@ export async function PATCH(request: Request) {
   }
 
   const access = await accessTo(supabase, todo.id, actor);
-  if (!access.can_edit) {
+  if (!access.can_progress) {
     // Don't distinguish "not yours" from "you're only mentioned" — both
     // mean the same thing to the person reading it.
     return Response.json(
@@ -349,6 +391,24 @@ export async function PATCH(request: Request) {
         error: access.can_see
           ? "You're only mentioned on this one, so it's read-only."
           : "This isn't your to-do.",
+      },
+      { status: 403 }
+    );
+  }
+
+  /* An assignee may move the work along; they may not rewrite it. This is
+     the check the client asked for: a member handed a job by their head or
+     the super admin can tick it off, but cannot push the deadline out,
+     rename it, or quietly take other people off it. Checked on presence,
+     not on whether the value differs — sending the same due date back is
+     still an attempt to set it, and letting it through would make the rule
+     depend on what the browser happened to prefill. */
+  const changingTerms = TERM_FIELDS.some((k) => body[k] !== undefined);
+  if (changingTerms && !access.can_manage) {
+    return Response.json(
+      {
+        error:
+          "Only whoever set this to-do — their department head, or the super admin — can change its details or its deadline. You can still mark it done.",
       },
       { status: 403 }
     );

@@ -11,6 +11,7 @@ import {
   UserRound,
   AtSign,
   Search,
+  Lock,
 } from "lucide-react";
 import {
   api,
@@ -44,6 +45,19 @@ type Todo = {
   /* The enquiries, leads, orders and bookings this to-do is about, with
      their labels already resolved by todo_link_labels in 024. */
   links: TodoLink[];
+  /* What this viewer may do with this row, answered by the server's own
+     todo_access function rather than re-derived here — see 026. Working
+     it out twice is how a pencil ends up on a row that 403s the moment
+     you press it.
+       can_progress — tick it off / reopen it. Assignees included.
+       can_manage   — change the title, details, priority, DUE DATE, who's
+                      on it. Whoever set the work, not whoever has to do it.
+       can_delete   — same authority as managing. */
+  can_progress: boolean;
+  can_manage: boolean;
+  can_delete: boolean;
+  /* Who set it, so a row you can't change says whose it is. */
+  created_by_name: string | null;
 };
 
 type Member = MentionPerson & { role: string };
@@ -201,22 +215,22 @@ export default function TodosView() {
   const onlyMentioned = (todo: Todo) =>
     !!me && todo.mentions.includes(me.id) && !todo.assignees.includes(me.id);
 
-  /* Mirrors todo_access in 023 so the list never offers a button that
-     comes straight back as a 403. The server is the authority; this is
-     courtesy. A mention is read-only — that split is the whole point of
-     mentioning somebody rather than assigning them. */
-  const canEdit = (todo: Todo) =>
-    superAdmin ||
-    (!onlyMentioned(todo) &&
-      (deptHead ||
-        todo.created_by === me?.id ||
-        (me ? todo.assignees.includes(me.id) : false)));
+  /* No second opinion. These three used to be re-derived here from the
+     role and the assignee list, which drifted from the SQL in two places
+     at once — a head saw a pencil on work the super admin had set, and an
+     assignee saw a due-date field they weren't allowed to submit. The row
+     now carries the server's own answer (026). `=== true` so a database
+     that hasn't had 026 run yet fails closed rather than falling back to
+     the guess this replaced. */
+  const canProgress = (todo: Todo) => todo.can_progress === true;
+  const canManage = (todo: Todo) => todo.can_manage === true;
+  const canDelete = (todo: Todo) => todo.can_delete === true;
 
-  /* Narrower than editing on purpose. Being one of four assignees
-     shouldn't let you bin the other three's work — mark it done instead. */
-  const canDelete = (todo: Todo) =>
-    superAdmin ||
-    (!onlyMentioned(todo) && (deptHead || todo.created_by === me?.id));
+  /* On the hook for it, but it isn't yours to rewrite. Worth saying out
+     loud: without it the row just silently lacks a pencil, and "why can't
+     I edit this?" becomes a message to the person who set it. */
+  const setByBoss = (todo: Todo) =>
+    !canManage(todo) && !onlyMentioned(todo) && todo.created_by !== me?.id;
 
   const filteredMembers = useMemo(() => {
     const q = peopleFilter.trim().toLowerCase();
@@ -420,9 +434,12 @@ export default function TodosView() {
                 <ul className="overflow-hidden rounded-2xl border border-slate-200 bg-white divide-y divide-slate-100">
                   {grouped.get(group)!.map((todo) => {
                     const done = todo.status === "done";
-                    const canAct = canEdit(todo);
+                    // Ticking it off and rewriting it are different rights.
+                    const canTick = canProgress(todo);
+                    const canAct = canManage(todo);
                     const canBin = canDelete(todo);
                     const tagged = onlyMentioned(todo);
+                    const locked = setByBoss(todo);
                     // On "Assigned to me" everyone in the list is you, so
                     // naming people would just be noise.
                     const showPeople =
@@ -434,12 +451,12 @@ export default function TodosView() {
                       >
                         <button
                           onClick={() => toggleDone(todo)}
-                          disabled={!canAct}
+                          disabled={!canTick}
                           aria-label={
                             done ? `Reopen ${todo.title}` : `Complete ${todo.title}`
                           }
                           title={
-                            canAct
+                            canTick
                               ? undefined
                               : "You're only mentioned on this one"
                           }
@@ -447,7 +464,7 @@ export default function TodosView() {
                             done
                               ? "border-green bg-green text-white"
                               : "border-slate-300 hover:border-green"
-                          } ${canAct ? "" : "cursor-not-allowed opacity-40"}`}
+                          } ${canTick ? "" : "cursor-not-allowed opacity-40"}`}
                         >
                           {done && <Check className="size-3.5" />}
                         </button>
@@ -497,6 +514,17 @@ export default function TodosView() {
                               <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[0.65rem] font-medium text-slate-500">
                                 <AtSign className="size-2.5" />
                                 mentioned
+                              </span>
+                            )}
+                            {locked && (
+                              <span
+                                title="Only whoever set this can change the details or the deadline. You can still mark it done."
+                                className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[0.65rem] font-medium text-slate-500"
+                              >
+                                <Lock className="size-2.5" />
+                                {todo.created_by_name?.trim()
+                                  ? `set by ${todo.created_by_name.trim()}`
+                                  : "set by someone else"}
                               </span>
                             )}
                           </div>
