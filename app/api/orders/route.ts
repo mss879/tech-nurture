@@ -1,26 +1,8 @@
 import { getServerSupabase, notConfigured } from "@/lib/supabase/server";
 import { getVariant } from "@/lib/products.server";
+import { clipCustomer } from "@/lib/orders";
 
 type IncomingItem = { slug: string; model: string; qty: number };
-
-/* Public and unauthenticated, and every customer column is unbounded
-   `text`. Clip rather than reject so a chatty delivery note still gets
-   through. Prices are never taken from the request — see below. */
-const LIMITS = {
-  name: 120,
-  email: 160,
-  phone: 40,
-  address: 500,
-  city: 80,
-  province: 80,
-  notes: 2000,
-} as const;
-
-function clip(value: unknown, max: number): string | null {
-  if (typeof value !== "string") return null;
-  const trimmed = value.trim();
-  return trimmed ? trimmed.slice(0, max) : null;
-}
 
 // A basket of 500 lines would mean 500 catalogue lookups per request.
 const MAX_LINES = 50;
@@ -47,16 +29,9 @@ export async function POST(request: Request) {
     return Response.json({ error: "Invalid request body." }, { status: 400 });
   }
 
-  const c = body.customer ?? {};
-  const customer = {
-    name: clip(c.name, LIMITS.name),
-    email: clip(c.email, LIMITS.email),
-    phone: clip(c.phone, LIMITS.phone),
-    address: clip(c.address, LIMITS.address),
-    city: clip(c.city, LIMITS.city),
-    province: clip(c.province, LIMITS.province),
-    notes: clip(c.notes, LIMITS.notes),
-  };
+  /* Public and unauthenticated: clipped, never rejected for length.
+     Prices are never taken from the request either — see below. */
+  const customer = clipCustomer(body.customer);
   if (!customer.name || !customer.email || !customer.phone || !customer.address) {
     return Response.json(
       { error: "Name, email, contact number and address are required." },
