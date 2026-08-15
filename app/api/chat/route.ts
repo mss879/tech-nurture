@@ -42,9 +42,15 @@ const MAX_MESSAGES = 30;
 const MAX_CHARS = 4000;
 const MAX_SESSION_ID = 128;
 
-/* The model is configurable so the assistant can be upgraded without a code
-   change. gpt-4o-mini is the proven default on the client's current key. */
-const MODEL = process.env.OPENAI_CHAT_MODEL || "gpt-4o-mini";
+/* Chosen by benchmarking the candidates on this assistant's own hard cases
+   (see .env.example for the numbers). gpt-4.1-mini follows the prompt's
+   rules more reliably than gpt-4o-mini — it holds the no-repair-price line
+   under pressure and greets Tamil speakers in Tamil — at the same latency,
+   for roughly 1.6x the cost, which is a few dollars a month at this volume.
+   The gpt-5 tier is a poor fit here: reasoning tokens make it slower AND
+   dearer, and it writes paragraphs where a chat bubble wants a sentence.
+   Override with OPENAI_CHAT_MODEL to change this without a deploy. */
+const MODEL = process.env.OPENAI_CHAT_MODEL || "gpt-4.1-mini";
 
 const NOT_CONFIGURED_REPLY = `I'm just being set up right now — please ${contactLine()} and our team will help you straight away.`;
 const ERROR_REPLY = `Sorry — something went wrong on my side just then. I've alerted our team, and someone will pick this up shortly. If it's urgent, please ${contactLine()}.`;
