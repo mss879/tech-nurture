@@ -55,10 +55,22 @@ const ERROR_REPLY = `Sorry — something went wrong on my side just then. I've a
    deployments back it with a shared store (e.g. Upstash / Vercel KV) or
    add a bot-check token — see supabase/README.md. */
 const WINDOW_MS = 60_000;
-const MAX_REQ_PER_WINDOW = 15;
+
+/* Two tiers, because the two things being defended against are different.
+
+   Per conversation: a tight cap, since no real person types twelve messages
+   a minute. Per IP: a much looser one, because a single public IP is not a
+   single customer here — Sri Lankan mobile carriers put large numbers of
+   subscribers behind one CGNAT address, as do office and hotel networks. A
+   tight IP cap would lock out a whole carrier the moment a few customers
+   used the chat at once. The session tier keeps any one conversation
+   civil; the IP tier is only there to stop a script, which would have to
+   rotate session ids and would still hit it. */
+const MAX_PER_SESSION = 12;
+const MAX_PER_IP = 60;
 const hits = new Map<string, number[]>();
 
-function rateLimited(key: string): boolean {
+function rateLimited(key: string, max: number): boolean {
   const now = Date.now();
   const arr = (hits.get(key) ?? []).filter((t) => now - t < WINDOW_MS);
   arr.push(now);
@@ -68,7 +80,7 @@ function rateLimited(key: string): boolean {
       if (v.every((t) => now - t >= WINDOW_MS)) hits.delete(k);
     }
   }
-  return arr.length > MAX_REQ_PER_WINDOW;
+  return arr.length > max;
 }
 
 /* ---------- matching the customer's words to our fixed lists --------- */
@@ -186,6 +198,16 @@ async function rememberContact(
 /* Raise the "this conversation needs a person" flag in /admin/chats. Used
    both when the customer asks for a human and when the assistant breaks. */
 async function flagForHuman(supabase: SupabaseClient, sessionId: string) {
+  /* Was this conversation already raised? The flag itself is idempotent,
+     but the owner's email is not — without this a customer who keeps
+     typing after asking for a person sends a fresh alert every turn. */
+  const { data: existing } = await supabase
+    .from("chat_sessions")
+    .select("handoff_requested_at")
+    .eq("session_id", sessionId)
+    .maybeSingle();
+  const alreadyFlagged = !!existing?.handoff_requested_at;
+
   const { data, error } = await supabase
     .from("chat_sessions")
     .update({ handoff_requested_at: new Date().toISOString() })
@@ -193,12 +215,12 @@ async function flagForHuman(supabase: SupabaseClient, sessionId: string) {
     .select("session_id");
   if (error) {
     console.error("handoff flag failed:", error.message);
-    return false;
+    return { ok: false, alreadyFlagged };
   }
   // An update that matched no row is not a handoff, however green the
   // result looks — promising a callback nobody was told about is worse
   // than admitting we couldn't do it.
-  return (data?.length ?? 0) > 0;
+  return { ok: (data?.length ?? 0) > 0, alreadyFlagged };
 }
 
 /* Pull the most recent phone number out of what the customer typed. Used
@@ -326,12 +348,12 @@ export async function POST(request: Request) {
       : "anon";
 
   // Best-effort rate limit before any paid/DB work.
-  /* Keyed on the IP alone. Including the caller-supplied sessionId let a
-     script mint a fresh id per request and never hit the cap at all — the
-     limit has to be on something the caller doesn't choose. */
   const ip =
     request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-  if (rateLimited(ip)) {
+  if (
+    rateLimited(`s:${sessionId}`, MAX_PER_SESSION) ||
+    rateLimited(`ip:${ip}`, MAX_PER_IP)
+  ) {
     return Response.json({
       mode: "ai",
       content:
@@ -800,16 +822,21 @@ export async function POST(request: Request) {
             try {
               const tidyPhone = phone ? normalizePhone(phone) : null;
               await rememberContact(supabase, sessionId, { name, phone: tidyPhone });
-              const flagged = await flagForHuman(supabase, sessionId);
-              if (!flagged) return { success: false, reason: "db_error" };
-              await notifyOwnerHandoff(sessionId, {
-                reason,
-                name,
-                phone: tidyPhone ?? undefined,
-              });
+              const { ok, alreadyFlagged } = await flagForHuman(supabase, sessionId);
+              if (!ok) return { success: false, reason: "db_error" };
+              if (!alreadyFlagged) {
+                await notifyOwnerHandoff(sessionId, {
+                  reason,
+                  name,
+                  phone: tidyPhone ?? undefined,
+                });
+              }
               return {
                 success: true,
-                message: "A team member has been notified and will join this chat shortly.",
+                already_notified: alreadyFlagged,
+                message: alreadyFlagged
+                  ? "This chat was already handed over — a colleague is on the way. Don't call this tool again."
+                  : "A team member has been notified and will join this chat shortly.",
               };
             } catch (e) {
               console.error("request_human crashed:", e);
