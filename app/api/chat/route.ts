@@ -847,6 +847,17 @@ export async function POST(request: Request) {
       },
     });
 
+    /* One line per turn so the running cost of the assistant is visible in
+       the platform logs — input tokens dominate here (the prompt carries the
+       calendar, the service catalogue and the shop), so this is what to watch
+       if the model is ever changed. */
+    console.log(
+      `[chat] model=${MODEL} steps=${result.steps?.length ?? 1} ` +
+        `in=${result.usage?.inputTokens ?? "?"} out=${result.usage?.outputTokens ?? "?"} ` +
+        `cacheRead=${result.usage?.inputTokenDetails?.cacheReadTokens ?? 0} ` +
+        `reasoning=${result.usage?.outputTokenDetails?.reasoningTokens ?? 0}`
+    );
+
     let content = result.text?.trim() ?? "";
 
     /* The step budget can run out on a tool call, leaving the turn with no

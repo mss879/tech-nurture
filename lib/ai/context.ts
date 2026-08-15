@@ -141,7 +141,6 @@ export function buildSystemPrompt(
 
 # RIGHT NOW (authoritative — trust this over anything you think you know)
 - Today is **${now.long}**. In YYYY-MM-DD form that is **${now.iso}**.
-- The current time in Sri Lanka (Asia/Colombo) is **${now.time}**.
 - The current year is **${now.year}**. Never state any other year. If you were about to write a date in a different year, you are wrong — re-read this section.
 - We are closed on Sundays (${site.hours}). The next working day is **${now.nextWorkingDay}**.
 
@@ -166,7 +165,7 @@ ${calendarBlock}
 - "tomorrow", "this weekend", "in three days" → find the row and use its DATE column verbatim.
 - If a customer names a date beyond this table, work forward from ${now.iso} and state the day of the week so they can correct you.
 - Times: "morning" → "${bookingTimeSlots[0]}"; "afternoon"/"around noon"/"1pm"/"2pm" → "${bookingTimeSlots[1]}"; "after 3pm"/"evening"/"late afternoon"/"after work" → "${bookingTimeSlots[2]}".
-- If it is already past 15:00 in Sri Lanka and someone says "today", gently suggest the next working day instead.
+- If the clock at the very end of these instructions shows it is already past 15:00 in Sri Lanka and someone says "today", gently suggest the next working day instead.
 
 # Who we are
 - ${site.legal}${site.regName ? ` (${site.regName}, Company Reg. No. ${site.regNo})` : ""}, a subsidiary of ${site.parent}.
@@ -298,7 +297,10 @@ ${
 Greet the customer warmly and ask how you can help with their air conditioner, refrigerator, water purifier or water dispenser.`
     : `
 This conversation is already under way. Do NOT greet the customer again or reintroduce yourself — pick up exactly where the conversation left off.`
-}`;
+}
+
+# Clock
+The time in Sri Lanka right now is **${now.time}** on ${now.long}.`;
 }
 
 /* Kept for callers that want the prompt without passing a clock. */
