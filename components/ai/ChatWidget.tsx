@@ -5,8 +5,14 @@ import dynamic from "next/dynamic";
 import { MessageCircle, X, Send, Loader2 } from "lucide-react";
 import { whatsappLink } from "@/lib/site";
 
-type Msg = { role: "user" | "assistant" | "agent"; content: string };
+type Msg = { id: string; role: "user" | "assistant" | "agent"; content: string };
 const SID_KEY = "tn_chat_sid";
+/* The transcript is kept next to the session id. The server remembers the
+   conversation either way, but the widget used to start from a blank panel
+   after any reload — so the visitor saw their booking details vanish, and
+   the model was sent a history that began mid-sentence. */
+const LOG_KEY = "tn_chat_log";
+const LOG_LIMIT = 60;
 
 /* Only assistant bubbles render Markdown, and none exist until the panel is
    opened — so the renderer is loaded on demand rather than on every page. */
@@ -42,13 +48,15 @@ function newId() {
 export default function ChatWidget() {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Msg[]>([
-    { role: "assistant", content: GREETING },
+    { id: "greeting", role: "assistant", content: GREETING },
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pastHero, setPastHero] = useState(false);
   const [mode, setMode] = useState<"ai" | "manual">("ai");
+  const [unread, setUnread] = useState(0);
+  const openRef = useRef(false);
   const sessionId = useRef<string>("");
   const lastAgentAt = useRef<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -56,8 +64,8 @@ export default function ChatWidget() {
   const launcherRef = useRef<HTMLButtonElement>(null);
   const nearBottomRef = useRef(true);
 
-  // Persist the session id so a conversation (and any human takeover) survives
-  // page reloads.
+  // Persist the session id and the transcript so a conversation (and any
+  // human takeover) survives page reloads.
   useEffect(() => {
     try {
       let id = localStorage.getItem(SID_KEY);
@@ -66,51 +74,78 @@ export default function ChatWidget() {
         localStorage.setItem(SID_KEY, id);
       }
       sessionId.current = id;
+      const saved = localStorage.getItem(LOG_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) setMessages(parsed);
+      }
     } catch {
-      sessionId.current = newId();
+      sessionId.current = sessionId.current || newId();
     }
   }, []);
 
-  // While the panel is open, poll for the team's replies (role 'agent') and
-  // for a switch to manual mode, so a human takeover appears live.
   useEffect(() => {
-    if (!open) return;
+    try {
+      localStorage.setItem(LOG_KEY, JSON.stringify(messages.slice(-LOG_LIMIT)));
+    } catch {
+      // storage full or blocked — the server still has the transcript
+    }
+  }, [messages]);
+
+  useEffect(() => {
+    openRef.current = open;
+  }, [open]);
+
+  /* Poll for the team's replies (role 'agent') and for a switch to manual
+     mode. This runs whether or not the panel is open: a visitor who closed
+     the panel after asking for a person used to never learn that someone had
+     answered. Closed, it polls slowly and raises an unread badge instead. */
+  useEffect(() => {
     let active = true;
+    let timer: ReturnType<typeof setTimeout>;
+
     const poll = async () => {
       const sid = sessionId.current;
-      if (!sid) return;
-      try {
-        const after = lastAgentAt.current;
-        const res = await fetch(
-          `/api/chat/poll?sessionId=${encodeURIComponent(sid)}${
-            after ? `&after=${encodeURIComponent(after)}` : ""
-          }`
-        );
-        const data = await res.json().catch(() => null);
-        if (!active || !data) return;
-        if (data.mode === "ai" || data.mode === "manual") setMode(data.mode);
-        if (Array.isArray(data.messages) && data.messages.length > 0) {
-          setMessages((m) => [
-            ...m,
-            ...data.messages.map((x: { content: string }) => ({
-              role: "agent" as const,
-              content: x.content,
-            })),
-          ]);
-          lastAgentAt.current =
-            data.messages[data.messages.length - 1].created_at;
+      if (sid) {
+        try {
+          const after = lastAgentAt.current;
+          const res = await fetch(
+            `/api/chat/poll?sessionId=${encodeURIComponent(sid)}${
+              after ? `&after=${encodeURIComponent(after)}` : ""
+            }`
+          );
+          const data = await res.json().catch(() => null);
+          if (!active) return;
+          if (data) {
+            if (data.mode === "ai" || data.mode === "manual") setMode(data.mode);
+            if (Array.isArray(data.messages) && data.messages.length > 0) {
+              setMessages((m) => [
+                ...m,
+                ...data.messages.map((x: { id?: string; content: string }) => ({
+                  id: x.id ?? newId(),
+                  role: "agent" as const,
+                  content: x.content,
+                })),
+              ]);
+              lastAgentAt.current =
+                data.messages[data.messages.length - 1].created_at;
+              if (!openRef.current)
+                setUnread((n) => n + data.messages.length);
+            }
+          }
+        } catch {
+          // best-effort
         }
-      } catch {
-        // best-effort
       }
+      if (active) timer = setTimeout(poll, openRef.current ? 5000 : 20000);
     };
+
     poll();
-    const iv = setInterval(poll, 5000);
     return () => {
       active = false;
-      clearInterval(iv);
+      clearTimeout(timer);
     };
-  }, [open]);
+  }, []);
 
   // Reveal the floating buttons once the visitor scrolls past the hero
   // (roughly the first screen). Lenis dispatches native scroll events, so a
@@ -144,6 +179,7 @@ export default function ChatWidget() {
     if (open) {
       inputRef.current?.focus();
       setError(null);
+      setUnread(0);
       nearBottomRef.current = true;
     } else {
       launcherRef.current?.focus();
@@ -163,7 +199,8 @@ export default function ChatWidget() {
   const send = async () => {
     const text = input.trim();
     if (!text || loading) return;
-    const next = [...messages, { role: "user" as const, content: text }];
+    const sent: Msg = { id: newId(), role: "user", content: text };
+    const next = [...messages, sent];
     setMessages(next);
     setInput("");
     setLoading(true);
@@ -181,12 +218,18 @@ export default function ChatWidget() {
       if (data.mode === "ai" || data.mode === "manual") setMode(data.mode);
       // In manual mode the reply comes from a human via polling (content null).
       if (typeof data.content === "string" && data.content) {
-        setMessages((m) => [...m, { role: "assistant", content: data.content }]);
+        setMessages((m) => [
+          ...m,
+          { id: newId(), role: "assistant", content: data.content },
+        ]);
       }
     } catch {
-      // roll back the optimistic user message and give the text back
-      setMessages((m) => m.slice(0, -1));
-      setInput(text);
+      /* Roll back this exact message, not "the last one" — a team reply can
+         arrive from the poll while the request is in flight, and slice(-1)
+         would delete that instead. Only hand the text back if the box is
+         still empty, so anything typed since isn't overwritten. */
+      setMessages((m) => m.filter((x) => x.id !== sent.id));
+      setInput((v) => (v ? v : text));
       setError("Couldn't reach the assistant. Please try again in a moment.");
     } finally {
       setLoading(false);
@@ -230,10 +273,25 @@ export default function ChatWidget() {
             warmMarkdown();
             setOpen((v) => !v);
           }}
-          aria-label={open ? "Close chat" : "Chat with our AI assistant"}
-          className="grid size-14 place-items-center rounded-full bg-lime text-ink shadow-[0_10px_35px_-8px_rgba(143,209,63,0.7)] transition hover:bg-lime-bright active:scale-95"
+          aria-label={
+            open
+              ? "Close chat"
+              : unread > 0
+                ? `Chat with our AI assistant — ${unread} new ${
+                    unread === 1 ? "reply" : "replies"
+                  } from the team`
+                : "Chat with our AI assistant"
+          }
+          className="relative grid size-14 place-items-center rounded-full bg-lime text-ink shadow-[0_10px_35px_-8px_rgba(143,209,63,0.7)] transition hover:bg-lime-bright active:scale-95"
         >
           {open ? <X className="size-6" /> : <MessageCircle className="size-6" />}
+          {/* A person answered while the panel was shut — say so, or the
+              visitor never finds out. */}
+          {!open && unread > 0 && (
+            <span className="absolute -right-0.5 -top-0.5 grid size-5 place-items-center rounded-full bg-red-500 text-[0.65rem] font-bold text-white">
+              {unread > 9 ? "9+" : unread}
+            </span>
+          )}
         </button>
       </div>
 
@@ -284,7 +342,7 @@ export default function ChatWidget() {
               const isAgent = m.role === "agent";
               return (
                 <div
-                  key={i}
+                  key={m.id ?? i}
                   className={`flex ${isUser ? "justify-end" : "justify-start"}`}
                 >
                   <div

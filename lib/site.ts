@@ -879,7 +879,9 @@ export const posts = [
 export const faqs = [
   {
     q: "How often should home appliances be serviced?",
-    a: "As a guide: air conditioners every 3–6 months, refrigerators once a year, inline water purifiers depending on your water source and consumption — generally every 3–6 months — and bottle water dispensers every 3–6 months. Regular maintenance keeps appliances efficient and prevents breakdowns.",
+    // Intervals are the client's own figures (see "Frequently Asked
+    // Questions (FAQs).docx"): water purifiers are 4–6 months, not 3–6.
+    a: "As a guide: air conditioners every 3–6 months, refrigerators once a year, inline water purifiers every 4–6 months depending on your water quality and consumption, and bottle water dispensers every 3–6 months. Regular maintenance keeps appliances efficient and prevents breakdowns.",
   },
   {
     q: "Which appliance brands do you repair?",
